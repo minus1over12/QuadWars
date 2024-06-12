@@ -1,0 +1,9 @@
+name: QuadWars
+version: '${version}'
+main: io.github.minus1over12.quadwars.QuadWars
+api-version: '1.20.6'
+author: War Pigeon
+permissions:
+  quadwars.gamemaster:
+    description: Exempts the player from team world border controls.
+    default: op

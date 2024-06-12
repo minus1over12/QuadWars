@@ -1,0 +1,104 @@
+import xyz.jpenilla.runtask.task.AbstractRun
+
+plugins {
+    id 'java'
+    id("xyz.jpenilla.run-paper") version "2.3.0"
+    id("io.github.goooler.shadow") version "8.1.7"
+}
+
+group = 'io.github.minus1over12'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+    maven {
+        name = "Minecraft Libraries"
+        url = "https://libraries.minecraft.net"
+    }
+}
+
+dependencies {
+    compileOnly "io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT"
+    compileOnly 'org.jetbrains:annotations:24.1.0'
+    implementation "org.bstats:bstats-bukkit:3.0.2"
+}
+
+def targetJavaVersion = 21
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release.set(targetJavaVersion)
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+tasks {
+    runServer {
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        minecraftVersion("1.20.6")
+        downloadPlugins {
+            hangar("Geyser", "Geyser")
+            hangar("Floodgate", "Floodgate")
+            modrinth("FastAsyncWorldEdit", "2.10.0")
+            hangar("ViaBackwards", "4.10.2")
+            hangar("ViaVersion", "4.10.2")
+            github("PaperMC", "Debuggery", "v1.5.1", "debuggery-bukkit-1.5.1.jar")
+        }
+    }
+    shadowJar {
+        relocate 'org.bstats', 'io.github.minus1over12.quadwars.bstats'
+    }
+}
+
+tasks.jar {
+    manifest {
+        attributes["Implementation-Title"] = "QuadWars"
+        attributes["Implementation-Version"] = version
+        attributes["Implementation-Vendor"] = "War Pigeon"
+        attributes["paperweight-mappings-namespace"] = "mojang"
+    }
+    reproducibleFileOrder = true
+}
+
+tasks.withType(AbstractRun).configureEach {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+    jvmArgs("-Xms512M", "-Xmx6G", "-XX:+UseG1GC", "-XX:+ParallelRefProcEnabled",
+            "-XX:MaxGCPauseMillis=200",
+            "-XX:+UnlockExperimentalVMOptions", "-XX:+DisableExplicitGC", "-XX:+AlwaysPreTouch",
+            "-XX:G1NewSizePercent=30", "-XX:G1MaxNewSizePercent=40", "-XX:G1HeapRegionSize=8M",
+            "-XX:G1ReservePercent=20", "-XX:G1HeapWastePercent=5", "-XX:G1MixedGCCountTarget=4",
+            "-XX:InitiatingHeapOccupancyPercent=15", "-XX:G1MixedGCLiveThresholdPercent=90",
+            "-XX:G1RSetUpdatingPauseTimePercent=5", "-XX:SurvivorRatio=32",
+            "-XX:+PerfDisableSharedMem", "-XX:MaxTenuringThreshold=1",
+            "-Dusing.aikars.flags=https://mcflags.emc.gs", "-Daikars.new.flags=true")
+}
