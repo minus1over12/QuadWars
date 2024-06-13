@@ -4,28 +4,30 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+/**
+ * Controls the world settings based on the game state.
+ *
+ * @author War Pigeon
+ */
 public class WorldControl implements Listener {
+    /**
+     * Configures all worlds based on the game state.
+     *
+     * @param event the event that triggered this method
+     */
     @EventHandler
-    public void onGameStateChange(GameStateEvent event) {
+    public static void onGameStateChange(GameStateChangeEvent event) {
         GameState state = event.getState();
         Bukkit.getWorlds().forEach(world -> {
             switch (state) {
-                case PREGAME:
+                case PREGAME, POSTGAME, PREP -> {
                     world.setPVP(false);
                     world.setHardcore(false);
-                    break;
-                case PREP:
-                    world.setPVP(false);
-                    world.setHardcore(false);
-                    break;
-                case BATTLE:
+                }
+                case BATTLE -> {
                     world.setPVP(true);
                     world.setHardcore(true);
-                    break;
-                case POSTGAME:
-                    world.setPVP(false);
-                    world.setHardcore(false);
-                    break;
+                }
             }
         });
     }

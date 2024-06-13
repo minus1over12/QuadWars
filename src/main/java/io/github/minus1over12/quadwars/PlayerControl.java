@@ -6,23 +6,26 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+/**
+ * Controls the players in the game.
+ *
+ * @author War Pigeon
+ */
 public class PlayerControl implements Listener {
+    /**
+     * Handles player events when the game state changes.
+     * @param event The event that triggered this method.
+     */
     @EventHandler
-    public void onGameStateChange(GameStateEvent event) {
+    public static void onGameStateChange(GameStateChangeEvent event) {
         GameState state = event.getState();
         switch (state) {
-            case PREGAME:
-                // Do nothing
-                break;
-            case PREP:
-                // Do nothing
-                break;
-            case BATTLE:
-                // Do nothing
-                Bukkit.getOnlinePlayers().forEach(player -> player.playSound(Sound.sound(Key.key("event.raid.horn"), Sound.Source.MASTER, 1, 1)));
-            case POSTGAME:
-                // Do nothing
-                break;
+            case PREGAME, PREP, POSTGAME -> {
+            }
+            case BATTLE -> {
+                Bukkit.getOnlinePlayers().forEach(player -> player.playSound(
+                        Sound.sound(Key.key("event.raid.horn"), Sound.Source.MASTER, 1, 1)));
+            }
         }
     }
     

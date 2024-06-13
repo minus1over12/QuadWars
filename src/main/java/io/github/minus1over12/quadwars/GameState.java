@@ -1,5 +1,10 @@
 package io.github.minus1over12.quadwars;
 
+/**
+ * Represents the state of the game.
+ *
+ * @author War Pigeon
+ */
 public enum GameState {
     /**
      * State before the game starts.

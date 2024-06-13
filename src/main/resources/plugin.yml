@@ -7,3 +7,12 @@ permissions:
   quadwars.gamemaster:
     description: Exempts the player from team world border controls.
     default: op
+commands:
+  quadwars:
+    description: Shows info about the QuadWars plugin.
+    usage: "/<command>"
+    permission-message: "QuadWars made by War Pigeon"
+  qwsetstate:
+    description: Sets the state of the game.
+    usage: "/<command> <state>"
+    permission: quadwars.gamemaster
