@@ -1,5 +1,6 @@
 package io.github.minus1over12.quadwars;
 
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
@@ -21,11 +22,11 @@ import java.util.Objects;
  *
  * @author War Pigeon
  */
-public class LobbyWorldControl implements Listener {
+public class LobbyWorldController implements Listener {
     /**
      * The lobby world.
      */
-    protected final World lobbyWorld;
+    private final World lobbyWorld;
     /**
      * The current game state.
      */
@@ -36,12 +37,13 @@ public class LobbyWorldControl implements Listener {
      *
      * @param plugin the plugin to get the game state from
      */
-    protected LobbyWorldControl(QuadWars plugin) {
+    LobbyWorldController(QuadWars plugin) {
         gameState = plugin.getGameState();
-        lobbyWorld = new WorldCreator(new NamespacedKey(plugin, "lobby")).generateStructures(false)
-                .hardcore(false).keepSpawnLoaded(TriState.FALSE)
-                .environment(World.Environment.NORMAL).type(WorldType.FLAT).createWorld();
-        Objects.requireNonNull(lobbyWorld);
+        lobbyWorld = Objects.requireNonNull(
+                new WorldCreator(new NamespacedKey(plugin, "lobby")).generateStructures(false)
+                        .hardcore(false).keepSpawnLoaded(TriState.FALSE)
+                        .environment(World.Environment.NORMAL).type(WorldType.FLAT).createWorld(),
+                "Could not load lobby");
         lobbyWorld.setPVP(false);
         lobbyWorld.setDifficulty(Difficulty.PEACEFUL);
         lobbyWorld.setSpawnFlags(false, false);
@@ -61,12 +63,24 @@ public class LobbyWorldControl implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        if (gameState == GameState.PREGAME ||
-                (!(player.isOp() || player.hasPermission("quadwars.gamemaster")) &&
-                        Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player) ==
-                                null)) {
+        if (gameState == GameState.PREGAME || (!player.hasPermission("quadwars.gamemaster") &&
+                Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player) == null)) {
+            //Not using async because we want to get the player without a team out of the game
+            // world right away.
             player.teleport(lobbyWorld.getSpawnLocation());
             player.setGameMode(GameMode.ADVENTURE);
+            switch (gameState) {
+                case PREGAME -> {
+                    player.sendMessage(Component.text(
+                            "The game has not started yet, but you can " + "pick a team."));
+                }
+                case PREP -> {
+                    player.sendMessage(Component.text(
+                            "The game is in the prep phase, but you " + "can still join a team."));
+                }
+                case BATTLE, POSTGAME -> player.sendMessage(
+                        Component.text("The battle has started, new players may not join."));
+            }
         }
     }
     
@@ -78,12 +92,21 @@ public class LobbyWorldControl implements Listener {
     @EventHandler
     public void onGameStateChange(GameStateChangeEvent event) {
         gameState = event.getState();
+        if (gameState == GameState.PREGAME) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                player.teleportAsync(lobbyWorld.getSpawnLocation())
+                        .thenRun(() -> player.setGameMode(GameMode.ADVENTURE));
+            }
+        }
     }
     
     /**
-     * Unloads the lobby world. This should be called when the plugin is disabled.
+     * Gets the NamespacedKey of the lobby world.
+     *
+     * @return the NamespacedKey of the lobby world
      */
-    void unloadLobby() {
-        Bukkit.unloadWorld(lobbyWorld, true);
+    NamespacedKey getLobbyWorldKey() {
+        return lobbyWorld.getKey();
     }
+    
 }

@@ -1,0 +1,39 @@
+# Because of how the End works, there's no nice way to have it split into quadrants. Because of
+# this, the End is not quadrant restricted during the prep phase, and teams can interact with
+# each other. The plugin does shut off PvP during prep. If you want to make sure the teams have
+# no way of interacting during the prep phase, or if you just want to save the end for the battle
+# phase, you can disable access to the End during the prep phase here.
+allowEndInPrepPhase: true
+
+# This is the size of the world border for each quadrant. The center is automatically calculated
+# for each team. The Nether's world border is scaled to 1/8th of the size of the overworld's
+# border because of coordinate scaling, so consider that when picking a value for this.
+worldBorderSize: 1000
+
+# These are the display names for each of the teams. You can format them using MiniMessage. If
+# you are not familiar with the MiniMessage format, there's an editor at https://webui.advntr.dev/
+nwDisplayName: "<blue>NW"
+neDisplayName: "<green>NE"
+seDisplayName: "<red>SE"
+swDisplayName: "<yellow>SW"
+# These are the prefixes for each team. Minecraft adds them to the start of the player's name.
+# They also support MiniMessage formatting.
+nwPrefix: "<blue>[NW] "
+nePrefix: "<green>[NE] "
+sePrefix: "<red>[SE] "
+swPrefix: "<yellow>[SW] "
+# These are the suffixes for each team. Minecraft adds them to the end of the player's name.
+# MiniMessage works here too.
+nwSuffix: ""
+neSuffix: ""
+seSuffix: ""
+swSuffix: ""
+
+# These are the outline colors for each team.
+nwColor: 9
+neColor: 10
+seColor: 12
+swColor: 14
+
+# The name of the default world to use.
+defaultWorld: "world"

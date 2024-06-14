@@ -5,14 +5,31 @@ api-version: '1.20.6'
 author: War Pigeon
 permissions:
   quadwars.gamemaster:
-    description: Exempts the player from team world border controls.
+    description: "Allows control of game state."
     default: op
+  quadwars.player:
+    description: "Allows the player to play the game."
+    default: true
+    children:
+      quadwars.player.jointeam: true
+  quadwars.player.jointeam:
+    description: "Allows the player to join a team."
+    default: true
 commands:
   quadwars:
-    description: Shows info about the QuadWars plugin.
+    description: "Shows info about the QuadWars plugin."
     usage: "/<command>"
     permission-message: "QuadWars made by War Pigeon"
   qwsetstate:
-    description: Sets the state of the game.
+    description: "Sets the state of the game. You probably want to use /qwtransition instead."
     usage: "/<command> <state>"
+    permission: quadwars.gamemaster
+  jointeam:
+    description: "Joins a team."
+    usage: "/<command> <team>"
+    permission: quadwars.player.jointeam
+    permission-message: "You do not have permission to add yourself to a team."
+  qwtransition:
+    description: "Transitions the game to the next state, with an optional time delay."
+    usage: "/<command> [<time>]"
     permission: quadwars.gamemaster
