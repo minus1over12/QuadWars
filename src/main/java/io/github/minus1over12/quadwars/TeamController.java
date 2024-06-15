@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
@@ -21,6 +22,7 @@ import org.bukkit.scoreboard.Team;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -30,14 +32,29 @@ import java.util.stream.Collectors;
  */
 public class TeamController implements Listener {
     /**
+     * The prefixed used at the front of the team names to indicate that they are from QuadWars.
+     */
+    static final String TEAM_PREFIX = "quadwars_";
+    /**
+     * The pattern to match the QuadWars team prefix.
+     */
+    static final Pattern QUADWARS_PREFIX = Pattern.compile(TEAM_PREFIX);
+    /**
      * The logger for the plugin.
      */
     private final Logger logger;
+    /**
+     * The default world set in the config.
+     */
     private final World defaultWorld;
     /**
      * The current game state.
      */
     private GameState gameState;
+    /**
+     * If the plugin is running in hardcore mode.
+     */
+    private final boolean hardcore;
     
     /**
      * Creates a team control object.
@@ -49,7 +66,7 @@ public class TeamController implements Listener {
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         logger = plugin.getLogger();
         if (scoreboard.getTeams().stream()
-                .anyMatch(team -> !team.getName().startsWith("quadwars_"))) {
+                .anyMatch(team -> !team.getName().startsWith(TEAM_PREFIX))) {
             logger.warning("QuadWars is powered by Minecraft's built-in scoreboard system. " +
                     "Minecraft only allows a player to be on one team at a time. Your server has " +
                     "teams not managed by QuadWars. These will cause problems if anything else " +
@@ -57,7 +74,7 @@ public class TeamController implements Listener {
         }
         FileConfiguration config = plugin.getConfig();
         for (Quadrant quadrant : Quadrant.values()) {
-            String teamName = "quadwars_" + quadrant;
+            String teamName = TEAM_PREFIX + quadrant;
             Team team = scoreboard.getTeam(teamName);
             if (team == null) {
                 logger.info("Creating Scoreboard team " + teamName);
@@ -74,6 +91,7 @@ public class TeamController implements Listener {
         defaultWorld = Objects.requireNonNull(
                 Bukkit.getWorld(Objects.requireNonNull(config.getString("defaultWorld"))),
                 "defaultWorld was not set to a valid world.");
+        hardcore = config.getBoolean(QuadWars.HARDCORE_CONFIG_PATH);
     }
     
     /**
@@ -85,15 +103,15 @@ public class TeamController implements Listener {
     public void onGameStateChange(GameStateChangeEvent event) {
         gameState = event.getState();
         switch (gameState) {
-            case PREGAME, BATTLE, POSTGAME -> {
+            case PREGAME, BATTLE, POST_GAME -> {
             }
             case PREP -> {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     Team team =
                             Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player);
                     if (team != null) {
-                        Quadrant quadrant =
-                                Quadrant.valueOf(team.getName().replaceFirst("quadwars_", ""));
+                        Quadrant quadrant = Quadrant.valueOf(
+                                QUADWARS_PREFIX.matcher(team.getName()).replaceFirst(""));
                         player.teleportAsync(defaultWorld.getHighestBlockAt(quadrant.xSign * 256,
                                         quadrant.zSign * 256).getLocation().add(0, 1, 0))
                                 .thenRun(() -> player.setGameMode(GameMode.SURVIVAL));
@@ -128,8 +146,8 @@ public class TeamController implements Listener {
      *
      * @param outPlayer the player that was eliminated
      */
-    private void checkWinCondition(Player outPlayer) {
-        if (gameState == GameState.BATTLE) {
+    private void checkWinCondition(OfflinePlayer outPlayer) {
+        if (hardcore && gameState == GameState.BATTLE) {
             Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
             Set<Team> aliveTeams = Bukkit.getOnlinePlayers().stream()
                     .filter(player -> !player.isDead() &&
@@ -145,7 +163,7 @@ public class TeamController implements Listener {
                         Sound.sound(Key.key("entity.ender_dragon.death"), Sound.Source.MASTER, 1,
                                 0.5f));
                 
-                Bukkit.getPluginManager().callEvent(new GameStateChangeEvent(GameState.POSTGAME));
+                Bukkit.getPluginManager().callEvent(new GameStateChangeEvent(GameState.POST_GAME));
             } else if (playerTeam != null && !aliveTeams.contains(playerTeam)) {
                 Bukkit.broadcast(
                         playerTeam.displayName().append(Component.text(" has been eliminated!")));
@@ -163,7 +181,7 @@ public class TeamController implements Listener {
      */
     void addEntityToTeam(Entity entity, Quadrant quadrant) {
         Team team = Objects.requireNonNull(
-                Bukkit.getScoreboardManager().getMainScoreboard().getTeam("quadwars_" + quadrant),
+                Bukkit.getScoreboardManager().getMainScoreboard().getTeam(TEAM_PREFIX + quadrant),
                 "Could not load a team");
         team.addEntity(entity);
         logger.info("Adding " + entity.getName() + " to team " + quadrant);

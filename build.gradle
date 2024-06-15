@@ -23,6 +23,14 @@ repositories {
         name = "Minecraft Libraries"
         url = "https://libraries.minecraft.net"
     }
+    maven {
+        name = "spigot-repo"
+        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
+    }
+    maven {
+        name = "sonatype-oss-snapshots"
+        url = "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
 }
 
 dependencies {
@@ -71,6 +79,7 @@ tasks {
             hangar("ViaBackwards", "4.10.2")
             hangar("ViaVersion", "4.10.2")
             github("PaperMC", "Debuggery", "v1.5.1", "debuggery-bukkit-1.5.1.jar")
+            modrinth("ctfbuddy", "1.0.1") // Might as well test my other stuff at the same time.
         }
     }
     shadowJar {

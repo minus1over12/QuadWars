@@ -37,3 +37,13 @@ swColor: 14
 
 # The name of the default world to use.
 defaultWorld: "world"
+
+# You may not want players to be able to rejoin if they quit during the battle phase.
+# The plugin can enforce this by killing players that log in or out during the battle phase.
+# This does nothing if hardcore is off.
+killOnQuit: false
+
+# If you want to do something different from a last team standing game, such as a Capture The Flag,
+# you can shut off hardcore during the battle phase.
+# If you need help with a CTF, I made a plugin for that: https://modrinth.com/plugin/ctfbuddy
+hardcore: true

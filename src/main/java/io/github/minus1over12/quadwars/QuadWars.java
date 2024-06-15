@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
@@ -27,6 +28,8 @@ import java.util.logging.Level;
  * @author War Pigeon
  */
 public final class QuadWars extends JavaPlugin implements Listener {
+    static final String GAMEMASTER_PERMISSION = "quadwars.gamemaster";
+    static final String HARDCORE_CONFIG_PATH = "hardcore";
     /**
      * The file to store the game state in.
      */
@@ -76,15 +79,15 @@ public final class QuadWars extends JavaPlugin implements Listener {
         teamControl = new TeamController(this);
         Collection<NamespacedKey> ignoredWorldKeys = Set.of(lobbyWorldControl.getLobbyWorldKey());
         worldBorderControl = new WorldBorderController(this, ignoredWorldKeys);
-        playerControl = new PlayerController();
-        worldControl = new WorldController(ignoredWorldKeys);
+        playerControl = new PlayerController(this);
+        worldControl = new WorldController(ignoredWorldKeys, this);
         getServer().getPluginManager().registerEvents(lobbyWorldControl, this);
         getServer().getPluginManager().registerEvents(teamControl, this);
         getServer().getPluginManager().registerEvents(worldBorderControl, this);
         getServer().getPluginManager().registerEvents(playerControl, this);
         getServer().getPluginManager().registerEvents(worldControl, this);
     }
-
+    
     @Override
     public void onDisable() {
         saveConfig();
@@ -95,7 +98,6 @@ public final class QuadWars extends JavaPlugin implements Listener {
         super.reloadConfig();
         gameStateConfig = YamlConfiguration.loadConfiguration(gameStateFile);
         gameState = GameState.valueOf(gameStateConfig.getString("gameState"));
-        getLogger().config("Game state is " + gameState);
     }
     
     @Override
@@ -113,7 +115,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
         super.saveDefaultConfig();
         
         if (!gameStateFile.exists()) {
-            YamlConfiguration defaultGameStateConfig = new YamlConfiguration();
+            FileConfiguration defaultGameStateConfig = new YamlConfiguration();
             defaultGameStateConfig.set("gameState", GameState.PREGAME.toString());
             try {
                 defaultGameStateConfig.save(gameStateFile);
@@ -125,6 +127,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
     
     /**
      * Gets the current game state.
+     *
      * @return the current game state
      */
     GameState getGameState() {
@@ -151,7 +154,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
                 }
             }
             case "quadwars" -> {
-                sender.sendMessage(this + " by War Pigeon");
+                sender.sendMessage(Component.text(this + " by War Pigeon"));
                 return true;
             }
             case "qwtransition" -> {
@@ -179,7 +182,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
                                 "Battle state ends when only one team " + "is left alive."));
                         return true;
                     }
-                    case POSTGAME -> {
+                    case POST_GAME -> {
                         gameState = GameState.PREGAME;
                         gameStateConfig.set("gameState", GameState.PREGAME.toString());
                         getServer().getPluginManager()
@@ -217,11 +220,20 @@ public final class QuadWars extends JavaPlugin implements Listener {
                                 Component.text("You can't join a team during the battle."));
                         return true;
                     }
-                    case POSTGAME -> {
+                    case POST_GAME -> {
                         sender.sendMessage(Component.text("You can't join a team after the game."));
                         return true;
                     }
                     
+                }
+            }
+            case "worldborder" -> {
+                if (gameState != GameState.BATTLE) {
+                    sender.sendMessage(Component.text(
+                            "World border can only be changed during the battle phase."));
+                    return true;
+                } else {
+                    return worldBorderControl.processCommand(sender, args);
                 }
             }
             default -> throw new UnsupportedOperationException("Command not supported.");
@@ -235,21 +247,41 @@ public final class QuadWars extends JavaPlugin implements Listener {
                                                 @NotNull String[] args) {
         switch (command.getName().toLowerCase()) {
             case "qwsetstate" -> {
-                if (args.length == 1) {
-                    return Arrays.stream(GameState.values()).map(GameState::toString).toList();
-                } else {
-                    return List.of();
-                }
+                return args.length == 1 ?
+                        Arrays.stream(GameState.values()).map(GameState::toString).toList() :
+                        List.of();
             }
             case "quadwars" -> {
                 return List.of();
+            }
+            case "worldborder" -> {
+                if (args.length == 1) {
+                    return List.of("add", "damage", "get", "set", "warning");
+                }
+                switch (args[0]) {
+                    case "damage" -> {
+                        return args.length == 2 ? List.of("amount", "buffer") : List.of();
+                    }
+                    case "warning" -> {
+                        return args.length == 2 ? List.of("distance", "time") : List.of();
+                    }
+                    default -> {
+                        return List.of();
+                    }
+                }
             }
         }
         return super.onTabComplete(sender, command, alias, args);
     }
     
+    /**
+     * Sets the game state on changes.
+     *
+     * @param event the event that triggered this method
+     */
     @EventHandler
     public void onGameStateChange(GameStateChangeEvent event) {
         gameState = event.getState();
+        saveConfig();
     }
 }

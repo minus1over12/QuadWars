@@ -33,3 +33,13 @@ commands:
     description: "Transitions the game to the next state, with an optional time delay."
     usage: "/<command> [<time>]"
     permission: quadwars.gamemaster
+  worldborder:
+    description: "An enhanced world border command that sets the world border across dimensions 
+    with correct scaling."
+    usage: |-
+      /<command> add <distance> [<time>]
+      /<command> set <distance> [<time>]
+      /<command> damage (amount|buffer)
+      /<command> get
+      /<command> warning (distance|time)
+    permission: quadwars.gamemaster

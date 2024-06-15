@@ -63,7 +63,8 @@ public class LobbyWorldController implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        if (gameState == GameState.PREGAME || (!player.hasPermission("quadwars.gamemaster") &&
+        if (gameState == GameState.PREGAME ||
+                (!player.hasPermission(QuadWars.GAMEMASTER_PERMISSION) &&
                 Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player) == null)) {
             //Not using async because we want to get the player without a team out of the game
             // world right away.
@@ -78,7 +79,7 @@ public class LobbyWorldController implements Listener {
                     player.sendMessage(Component.text(
                             "The game is in the prep phase, but you " + "can still join a team."));
                 }
-                case BATTLE, POSTGAME -> player.sendMessage(
+                case BATTLE, POST_GAME -> player.sendMessage(
                         Component.text("The battle has started, new players may not join."));
             }
         }

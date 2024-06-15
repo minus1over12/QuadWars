@@ -21,5 +21,5 @@ public enum GameState {
     /**
      * The game has ended.
      */
-    POSTGAME
+    POST_GAME
 }
