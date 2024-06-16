@@ -36,6 +36,10 @@ import java.util.regex.Pattern;
  * @author War Pigeon
  */
 public class WorldBorderController implements Listener {
+    /**
+     * How much of a gap to put between the axis and the inner edges of the world border. Used to
+     * prevent accidental nether portal linking.
+     */
     static final int AXIS_BUFFER_OFFSET = 128;
     /**
      * The prefix for QuadWars teams.
@@ -139,10 +143,10 @@ public class WorldBorderController implements Listener {
             Team team = Bukkit.getScoreboardManager().getMainScoreboard()
                     .getPlayerTeam(event.getPlayer());
             if (team != null) {
-                Quadrant quadrant =
-                        Quadrant.valueOf(QUADWARS_PREFIX.matcher(team.getName()).replaceFirst(""));
+                Quadrant quadrant = getQuadrant(team);
                 event.setRespawnLocation(event.getRespawnLocation().getWorld()
-                        .getHighestBlockAt(quadrant.xSign * 256, quadrant.zSign * 256).getLocation()
+                        .getHighestBlockAt(quadrant.xSign * AXIS_BUFFER_OFFSET * 2,
+                                quadrant.zSign * AXIS_BUFFER_OFFSET * 2).getLocation()
                         .add(0, 1, 0));
             }
         }
@@ -187,7 +191,7 @@ public class WorldBorderController implements Listener {
      * @param player the player to shift the location of
      * @return the shifted location
      */
-    private Location getShiftedLocation(Player player) {
+    private static Location getShiftedLocation(Player player) {
         double coordinateScale = player.getWorld().getCoordinateScale();
         // Gets a clone of the player's location. Not cloning this will cause the real player to
         // move when we call Location.add().
@@ -199,23 +203,31 @@ public class WorldBorderController implements Listener {
         if (coordinateScale != 1.0) {
             // QuadWars' players are each in one Quadrant of the world. We will need to multiply
             // our offsets by -1 in some cases to get the right quadrant.
-            Quadrant quadrant = Quadrant.valueOf(QUADWARS_PREFIX.matcher(Objects.requireNonNull(
-                            Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player))
-                    .getName()).replaceFirst(""));
+            Quadrant quadrant = getQuadrant(Objects.requireNonNull(
+                    Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player)));
+            double size = worldBorder.getSize();
             // This is the "reverse engineered" algorithm for how Minecraft shifts the position of
             // coordinates for world borders. You take the center, then subtract half the size of
             // the border. You then subtract the distance from the origin to the border.
-            double xShift = worldBorder.getCenter().getX() -
-                    quadrant.xSign * worldBorderSize / coordinateScale / 2 -
+            double xShift = worldBorder.getCenter().getX() - quadrant.xSign * size / 2 -
                     (AXIS_BUFFER_OFFSET / coordinateScale * quadrant.xSign);
-            double zShift = worldBorder.getCenter().getZ() -
-                    quadrant.zSign * worldBorderSize / coordinateScale / 2 -
+            double zShift = worldBorder.getCenter().getZ() - quadrant.zSign * size / 2 -
                     (AXIS_BUFFER_OFFSET / coordinateScale * quadrant.zSign);
             // We then add our shifts to the player's location.
             playerLocation = playerLocation.add(xShift, 0, zShift);
         }
         return playerLocation;
         // And proceed to be sad about how long this took to figure out… ☹
+    }
+    
+    /**
+     * Gets the quadrant of a team.
+     *
+     * @param team the team to get the quadrant of
+     * @return the quadrant of the team
+     */
+    private static @NotNull Quadrant getQuadrant(Team team) {
+        return Quadrant.valueOf(QUADWARS_PREFIX.matcher(team.getName()).replaceFirst(""));
     }
     
     /**
@@ -229,11 +241,26 @@ public class WorldBorderController implements Listener {
     private void worldBorderDamageTask(ScheduledTask scheduledTask, Player player) {
         WorldBorder worldBorder = player.getWorldBorder();
         if (worldBorder != null) {
-            if (worldBorder.isInside(getShiftedLocation(player))) {
+            Location shiftedLocation = getShiftedLocation(player);
+            if (worldBorder.isInside(shiftedLocation)) {
                 oobPlayers.remove(player);
                 scheduledTask.cancel();
             } else {
-                player.damage(worldBorder.getDamageAmount());
+                Quadrant quadrant = getQuadrant(Objects.requireNonNull(
+                        Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player)));
+                double size = worldBorder.getSize();
+                double xMin = quadrant.xSign *
+                        Math.min(Math.abs(worldBorder.getCenter().getX() - size / 2),
+                                Math.abs(worldBorder.getCenter().getX() + size / 2));
+                double zMin = quadrant.zSign *
+                        Math.min(Math.abs(worldBorder.getCenter().getX() - size / 2),
+                                Math.abs(worldBorder.getCenter().getX() + size / 2));
+                double distance =
+                        Math.hypot(Math.min(0, Math.abs(shiftedLocation.getX()) - Math.abs(xMin)),
+                                Math.min(0, Math.abs(shiftedLocation.getZ()) - Math.abs(zMin)));
+                
+                player.damage(worldBorder.getDamageAmount() *
+                        Math.floor(distance / worldBorder.getDamageBuffer()));
             }
         } else {
             scheduledTask.cancel();
@@ -256,8 +283,7 @@ public class WorldBorderController implements Listener {
             Team team = Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player);
             if (team != null) {
                 WorldBorder worldBorder = Bukkit.createWorldBorder();
-                Quadrant quadrant =
-                        Quadrant.valueOf(QUADWARS_PREFIX.matcher(team.getName()).replaceFirst(""));
+                Quadrant quadrant = getQuadrant(team);
                 double scale = world.getCoordinateScale();
                 //DO NOT SCALE THE CENTER!!
                 //The API does it for you

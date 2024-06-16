@@ -112,8 +112,10 @@ public class TeamController implements Listener {
                     if (team != null) {
                         Quadrant quadrant = Quadrant.valueOf(
                                 QUADWARS_PREFIX.matcher(team.getName()).replaceFirst(""));
-                        player.teleportAsync(defaultWorld.getHighestBlockAt(quadrant.xSign * 256,
-                                        quadrant.zSign * 256).getLocation().add(0, 1, 0))
+                        player.teleportAsync(defaultWorld.getHighestBlockAt(
+                                                quadrant.xSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2,
+                                                quadrant.zSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2)
+                                        .getLocation().add(0, 1, 0))
                                 .thenRun(() -> player.setGameMode(GameMode.SURVIVAL));
                     }
                 }
@@ -186,8 +188,9 @@ public class TeamController implements Listener {
         team.addEntity(entity);
         logger.info("Adding " + entity.getName() + " to team " + quadrant);
         if (gameState != GameState.PREGAME) {
-            entity.teleportAsync(
-                    defaultWorld.getHighestBlockAt(quadrant.xSign * 256, quadrant.zSign * 256)
+            entity.teleportAsync(defaultWorld.getHighestBlockAt(
+                            quadrant.xSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2,
+                            quadrant.zSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2)
                             .getLocation().add(0, 1, 0)).thenRun(() -> {
                 if (entity instanceof HumanEntity humanEntity) {
                     humanEntity.setGameMode(GameMode.SURVIVAL);

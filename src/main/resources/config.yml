@@ -8,7 +8,7 @@ allowEndInPrepPhase: true
 # This is the size of the world border for each quadrant. The center is automatically calculated
 # for each team. The Nether's world border is scaled to 1/8th of the size of the overworld's
 # border because of coordinate scaling, so consider that when picking a value for this.
-worldBorderSize: 1000
+worldBorderSize: 60000
 
 # These are the display names for each of the teams. You can format them using MiniMessage. If
 # you are not familiar with the MiniMessage format, there's an editor at https://webui.advntr.dev/

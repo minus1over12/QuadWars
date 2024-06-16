@@ -10,12 +10,16 @@ import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.geysermc.cumulus.form.SimpleForm;
+import org.geysermc.floodgate.api.FloodgateApi;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Controls the lobby world.
@@ -56,6 +60,25 @@ public class LobbyWorldController implements Listener {
     }
     
     /**
+     * Sends a team join form to the player.
+     *
+     * @param player the player to send the form to
+     */
+    private static void sendTeamForm(Entity player) {
+        //todo this is untested and unfinished.
+        FloodgateApi instance = FloodgateApi.getInstance();
+        UUID uniqueId = player.getUniqueId();
+        if (instance.isFloodgatePlayer(uniqueId)) {
+            instance.sendForm(uniqueId,
+                    SimpleForm.builder().title("Select a Team").button("NE").button("SE")
+                            .button("SW").button("NW").validResultHandler(response -> {
+                                Bukkit.dispatchCommand(player,
+                                        "jointeam " + response.clickedButton().text());
+                            }).build());
+        }
+    }
+    
+    /**
      * Teleports players to the lobby world when they join if needed.
      *
      * @param event the event that triggered this method
@@ -74,6 +97,7 @@ public class LobbyWorldController implements Listener {
                 case PREGAME -> {
                     player.sendMessage(Component.text(
                             "The game has not started yet, but you can " + "pick a team."));
+                    sendTeamForm(player);
                 }
                 case PREP -> {
                     player.sendMessage(Component.text(

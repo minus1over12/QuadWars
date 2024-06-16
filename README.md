@@ -21,7 +21,11 @@ The plugin has three main phases:
 # Things players should know
 
 * Players can send messages to just their team using Vanilla's `/teammsg` command.
-* Avoid
+* Avoid building nether portals near the inner edges of the world border. It is possible for the
+  game to place the destination portal outside the team's world border, causing a potentially
+  deadly scenario where getting your items back can be near impossible.
+* Vanilla allows players to see their teammates when using invisibility potions.
+*
 
 # Suggestions for resolving a stalemate
 
@@ -49,3 +53,17 @@ to last, or `infinite` if you want it to last for the rest of the game.
 If you want to give players a reason to move, you can create a bonus chest with valuable items
 and give out the location to everyone. This may encourage players to move to the location and
 fight for the chest's content.
+
+# Compatibility
+
+QuadWars was built for Minecraft: Java Edition version 1.20.6, running Paper or one of its
+forks. Other versions of Minecraft may work, but are untested. (If a newer version has come out,
+please let me know how it goes!). Upstreams of Paper (Bukkit & Spigot) will *not* work, as this
+plugin utilizes the expanded API provided by Paper.
+
+# bStats
+
+This plugin uses [bStats](https://bstats.org/), the common service used by most plugins and server
+software, to keep track of basic stats. You can opt out of bStats for all plugins and your server
+software by editing the `plugins/bStats/config.yml` file that is generated on the server's first
+launch.

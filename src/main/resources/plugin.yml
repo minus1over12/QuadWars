@@ -3,6 +3,9 @@ version: '${version}'
 main: io.github.minus1over12.quadwars.QuadWars
 api-version: '1.20.6'
 author: War Pigeon
+softdepend:
+  - Geyser-Spigot
+  - floodgate
 permissions:
   quadwars.gamemaster:
     description: "Allows control of game state."
