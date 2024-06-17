@@ -82,8 +82,8 @@ tasks {
             hangar("Geyser", "Geyser")
             hangar("Floodgate", "Floodgate")
             modrinth("FastAsyncWorldEdit", "2.10.0")
-            hangar("ViaBackwards", "4.10.2")
-            hangar("ViaVersion", "4.10.2")
+            hangar("ViaBackwards", "5.0.0")
+            hangar("ViaVersion", "5.0.0")
             github("PaperMC", "Debuggery", "v1.5.1", "debuggery-bukkit-1.5.1.jar")
             modrinth("ctfbuddy", "1.0.1") // Might as well test my other stuff at the same time.
         }

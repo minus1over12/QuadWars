@@ -8,7 +8,7 @@ allowEndInPrepPhase: true
 # This is the size of the world border for each quadrant. The center is automatically calculated
 # for each team. The Nether's world border is scaled to 1/8th of the size of the overworld's
 # border because of coordinate scaling, so consider that when picking a value for this.
-worldBorderSize: 60000
+worldBorderSize: 25000
 
 # These are the display names for each of the teams. You can format them using MiniMessage. If
 # you are not familiar with the MiniMessage format, there's an editor at https://webui.advntr.dev/
@@ -43,7 +43,6 @@ defaultWorld: "world"
 # This does nothing if hardcore is off.
 killOnQuit: false
 
-# If you want to do something different from a last team standing game, such as a Capture The Flag,
-# you can shut off hardcore during the battle phase.
-# If you need help with a CTF, I made a plugin for that: https://modrinth.com/plugin/ctfbuddy
+# If you want to do something different from a last team standing game, such as a Capture The
+# Flag with the CTFBuddy plugin, you can shut off hardcore during the battle phase.
 hardcore: true

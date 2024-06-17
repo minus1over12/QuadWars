@@ -163,14 +163,15 @@ public class TeamController implements Listener {
                                 .append(Component.text(" has won!")));
                 Bukkit.getServer().playSound(
                         Sound.sound(Key.key("entity.ender_dragon.death"), Sound.Source.MASTER, 1,
-                                0.5f));
+                                0.5f), Sound.Emitter.self());
                 
                 Bukkit.getPluginManager().callEvent(new GameStateChangeEvent(GameState.POST_GAME));
             } else if (playerTeam != null && !aliveTeams.contains(playerTeam)) {
                 Bukkit.broadcast(
                         playerTeam.displayName().append(Component.text(" has been eliminated!")));
                 Bukkit.getServer().playSound(
-                        Sound.sound(Key.key("entity.wither.death"), Sound.Source.MASTER, 1, 0.5f));
+                        Sound.sound(Key.key("entity.wither.death"), Sound.Source.MASTER, 1, 0.5f),
+                        Sound.Emitter.self());
             }
         }
     }
@@ -185,20 +186,31 @@ public class TeamController implements Listener {
         Team team = Objects.requireNonNull(
                 Bukkit.getScoreboardManager().getMainScoreboard().getTeam(TEAM_PREFIX + quadrant),
                 "Could not load a team");
-        team.addEntity(entity);
-        logger.info("Adding " + entity.getName() + " to team " + quadrant);
-        if (gameState != GameState.PREGAME) {
-            entity.teleportAsync(defaultWorld.getHighestBlockAt(
-                            quadrant.xSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2,
-                            quadrant.zSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2)
-                            .getLocation().add(0, 1, 0)).thenRun(() -> {
-                if (entity instanceof HumanEntity humanEntity) {
-                    humanEntity.setGameMode(GameMode.SURVIVAL);
-                }
-            });
-            
+        if (Bukkit.getMaxPlayers() / 4 > team.getSize()) {
+            team.addEntity(entity);
+            logger.info("Adding " + entity.getName() + " to team " + quadrant);
+            if (gameState != GameState.PREGAME) {
+                entity.teleportAsync(defaultWorld.getHighestBlockAt(
+                                quadrant.xSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2,
+                                quadrant.zSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2).getLocation()
+                        .add(0, 1, 0)).thenRun(() -> {
+                    if (entity instanceof HumanEntity humanEntity) {
+                        humanEntity.setGameMode(GameMode.SURVIVAL);
+                    }
+                });
+                
+            }
+            entity.sendMessage(Component.text("Added you to ").append(team.displayName()));
+        } else {
+            entity.sendMessage(
+                    Component.textOfChildren(Component.text("Team ").color(NamedTextColor.RED),
+                            team.displayName(),
+                            Component.text(" is full.").color(NamedTextColor.RED)));
+            if (entity.isOp()) {
+                entity.sendMessage(Component.text(
+                        "To increase this, increase max-players in server.properties."));
+            }
         }
-        entity.sendMessage(Component.text("Added you to ").append(team.displayName()));
     }
     
 }

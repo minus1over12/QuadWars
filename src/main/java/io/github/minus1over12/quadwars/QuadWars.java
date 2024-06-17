@@ -1,6 +1,10 @@
 package io.github.minus1over12.quadwars;
 
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -10,16 +14,22 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
@@ -62,6 +72,10 @@ public final class QuadWars extends JavaPlugin implements Listener {
      * The current game state.
      */
     private GameState gameState;
+    /**
+     * Prevents multiple transitions from being queued.
+     */
+    private boolean transitionLock;
     
     @Override
     public void onLoad() {
@@ -81,11 +95,13 @@ public final class QuadWars extends JavaPlugin implements Listener {
         worldBorderControl = new WorldBorderController(this, ignoredWorldKeys);
         playerControl = new PlayerController(this);
         worldControl = new WorldController(ignoredWorldKeys, this);
-        getServer().getPluginManager().registerEvents(lobbyWorldControl, this);
-        getServer().getPluginManager().registerEvents(teamControl, this);
-        getServer().getPluginManager().registerEvents(worldBorderControl, this);
-        getServer().getPluginManager().registerEvents(playerControl, this);
-        getServer().getPluginManager().registerEvents(worldControl, this);
+        PluginManager pluginManager = getServer().getPluginManager();
+        pluginManager.registerEvents(lobbyWorldControl, this);
+        pluginManager.registerEvents(teamControl, this);
+        pluginManager.registerEvents(worldBorderControl, this);
+        pluginManager.registerEvents(playerControl, this);
+        pluginManager.registerEvents(worldControl, this);
+        pluginManager.registerEvents(this, this);
     }
     
     @Override
@@ -120,7 +136,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
             try {
                 defaultGameStateConfig.save(gameStateFile);
             } catch (IOException e) {
-                getLogger().log(Level.SEVERE, "Could not save game state file", e);
+                getLogger().log(Level.SEVERE, "Could not save default game state file", e);
             }
         }
     }
@@ -144,10 +160,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
                 }
                 try {
                     GameState newState = GameState.valueOf(args[0].toUpperCase());
-                    gameState = newState;
-                    gameStateConfig.set("gameState", newState.toString());
                     getServer().getPluginManager().callEvent(new GameStateChangeEvent(newState));
-                    saveConfig();
                     return true;
                 } catch (IllegalArgumentException e) {
                     return false;
@@ -158,38 +171,47 @@ public final class QuadWars extends JavaPlugin implements Listener {
                 return true;
             }
             case "qwtransition" -> {
-                switch (gameState) {
-                    case PREGAME -> {
-                        sender.sendMessage(Component.text("Starting prep phase…"));
-                        gameState = GameState.PREP;
-                        gameStateConfig.set("gameState", GameState.PREP.toString());
-                        getServer().getPluginManager()
-                                .callEvent(new GameStateChangeEvent(GameState.PREP));
-                        saveConfig();
+                if (!transitionLock) {
+                    if (args.length == 0) {
+                        transitionState(sender);
                         return true;
+                    } else if (args.length == 1) {
+                        BossBar progressBar = BossBar.bossBar(Component.text(switch (gameState) {
+                            case PREGAME -> "Start of Prep Phase";
+                            case PREP -> "Start of Battle Phase";
+                            case BATTLE -> "End of Battle Phase";
+                            case POST_GAME -> "End of Post-Game Phase";
+                        }), 0, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+                        try {
+                            Duration delay = Duration.ofSeconds(Long.parseLong(args[0]));
+                            Instant executionTime = Instant.now();
+                            Instant changeTime = executionTime.plus(delay);
+                            progressBar.addViewer(getServer());
+                            transitionLock = true;
+                            Bukkit.getAsyncScheduler().runAtFixedRate(this, scheduledTask -> {
+                                float progress = (float) (Instant.now().getEpochSecond() -
+                                        executionTime.getEpochSecond()) /
+                                        (changeTime.getEpochSecond() -
+                                                executionTime.getEpochSecond());
+                                if (progress >= 1) {
+                                    transitionLock = false;
+                                    scheduledTask.cancel();
+                                    progressBar.removeViewer(getServer());
+                                    transitionState(sender);
+                                }
+                                progressBar.progress(progress);
+                            }, 1, 1, TimeUnit.SECONDS);
+                            return true;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    } else {
+                        return false;
                     }
-                    case PREP -> {
-                        sender.sendMessage(Component.text("Starting battle phase…"));
-                        gameState = GameState.BATTLE;
-                        gameStateConfig.set("gameState", GameState.BATTLE.toString());
-                        getServer().getPluginManager()
-                                .callEvent(new GameStateChangeEvent(GameState.BATTLE));
-                        saveConfig();
-                        return true;
-                    }
-                    case BATTLE -> {
-                        sender.sendMessage(Component.text(
-                                "Battle state ends when only one team " + "is left alive."));
-                        return true;
-                    }
-                    case POST_GAME -> {
-                        gameState = GameState.PREGAME;
-                        gameStateConfig.set("gameState", GameState.PREGAME.toString());
-                        getServer().getPluginManager()
-                                .callEvent(new GameStateChangeEvent(GameState.PREGAME));
-                        saveConfig();
-                        return true;
-                    }
+                } else {
+                    sender.sendMessage(Component.text("A transition is already in progress.")
+                            .color(NamedTextColor.RED));
+                    return true;
                 }
             }
             case "jointeam" -> {
@@ -199,19 +221,26 @@ public final class QuadWars extends JavaPlugin implements Listener {
                             return false;
                         }
                         if (sender instanceof Entity entity) {
-                            if (Bukkit.getScoreboardManager().getMainScoreboard()
+                            Scoreboard scoreboard =
+                                    Bukkit.getScoreboardManager().getMainScoreboard();
+                            if (scoreboard
                                     .getEntityTeam(entity) != null) {
                                 sender.sendMessage(Component.text("You are already on a team."));
                             } else {
                                 try {
-                                    teamControl.addEntityToTeam(entity, Quadrant.valueOf(args[0]));
-                                } catch (IllegalArgumentException e) {
+                                    teamControl.addEntityToTeam(entity, Quadrant.valueOf(
+                                            scoreboard.getTeams().stream()
+                                                    .map(team -> PlainTextComponentSerializer.plainText()
+                                                            .serialize(team.displayName()))
+                                                    .filter(displayName -> displayName.equalsIgnoreCase(
+                                                            args[0])).findAny().orElseThrow()));
+                                } catch (IllegalArgumentException | NoSuchElementException e) {
                                     sender.sendMessage(Component.text("Invalid team name."));
                                 }
                             }
                         } else {
                             sender.sendMessage(
-                                    Component.text("You must be a player to join a " + "team."));
+                                    Component.text("You must be a player to join a team."));
                         }
                         return true;
                     }
@@ -236,9 +265,47 @@ public final class QuadWars extends JavaPlugin implements Listener {
                     return worldBorderControl.processCommand(sender, args);
                 }
             }
+            case "qwgetstate" -> {
+                sender.sendMessage(Component.text("The current game state is " + gameState));
+                return true;
+            }
             default -> throw new UnsupportedOperationException("Command not supported.");
         }
         return false;
+    }
+    
+    /**
+     * Transitions the state from one to the next.
+     *
+     * @param sender the sender of the command to send messages to.
+     */
+    private void transitionState(@NotNull Audience sender) {
+        switch (gameState) {
+            case PREGAME -> {
+                Bukkit.getScheduler().runTask(this, () -> getServer().getPluginManager()
+                        .callEvent(new GameStateChangeEvent(GameState.PREP)));
+                sender.sendMessage(Component.text("Starting prep phase…"));
+            }
+            case PREP -> {
+                Bukkit.getScheduler().runTask(this, () -> getServer().getPluginManager()
+                        .callEvent(new GameStateChangeEvent(GameState.BATTLE)));
+                sender.sendMessage(Component.text("Starting battle phase…"));
+            }
+            case BATTLE -> {
+                if (getConfig().getBoolean("hardcore")) {
+                    sender.sendMessage(
+                            Component.text("Battle state ends when only one team is left alive."));
+                } else {
+                    Bukkit.getScheduler().runTask(this, () -> getServer().getPluginManager()
+                            .callEvent(new GameStateChangeEvent(GameState.POST_GAME)));
+                    sender.sendMessage(Component.text("Starting post-game phase…"));
+                }
+            }
+            case POST_GAME -> {
+                Bukkit.getScheduler().runTask(this, () -> getServer().getPluginManager()
+                        .callEvent(new GameStateChangeEvent(GameState.PREGAME)));
+            }
+        }
     }
     
     @Override
@@ -251,7 +318,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
                         Arrays.stream(GameState.values()).map(GameState::toString).toList() :
                         List.of();
             }
-            case "quadwars" -> {
+            case "quadwars", "qwtransition", "qwgetstate" -> {
                 return List.of();
             }
             case "worldborder" -> {
@@ -270,6 +337,13 @@ public final class QuadWars extends JavaPlugin implements Listener {
                     }
                 }
             }
+            case "jointeam" -> {
+                if (args.length == 1) {
+                    return Bukkit.getScoreboardManager().getMainScoreboard().getTeams().stream()
+                            .map(team -> PlainTextComponentSerializer.plainText()
+                                    .serialize(team.displayName())).toList();
+                }
+            }
         }
         return super.onTabComplete(sender, command, alias, args);
     }
@@ -282,6 +356,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
     @EventHandler
     public void onGameStateChange(GameStateChangeEvent event) {
         gameState = event.getState();
+        gameStateConfig.set("gameState", gameState.toString());
         saveConfig();
     }
 }

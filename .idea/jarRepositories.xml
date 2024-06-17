@@ -41,5 +41,10 @@
       <option name="name" value="sonatype-oss-snapshots" />
       <option name="url" value="https://oss.sonatype.org/content/repositories/snapshots/" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="opencollab-snapshot" />
+      <option name="name" value="opencollab-snapshot" />
+      <option name="url" value="https://repo.opencollab.dev/main/" />
+    </remote-repository>
   </component>
 </project>

@@ -20,19 +20,66 @@ The plugin has three main phases:
 
 # Things players should know
 
-* Players can send messages to just their team using Vanilla's `/teammsg` command.
+* Players can send messages to just their team using Vanilla's `/teammsg` (aliased to `/tm`)
+  command.
 * Avoid building nether portals near the inner edges of the world border. It is possible for the
   game to place the destination portal outside the team's world border, causing a potentially
   deadly scenario where getting your items back can be near impossible.
-* Vanilla allows players to see their teammates when using invisibility potions.
-*
+* Vanilla allows players to see their teammates when using invisibility potions and prevents
+  friendly fire.
+* Players can join a team using `/jointeam`. Players connected using Floodgate+Geyser will get a
+  popup to select a team. Once a team is selected, they can not change it themselves.
 
-# Suggestions for resolving a stalemate
+# Admin Usage
+
+## Permissions
+
+Admin functions of the plugin are gated by `quadwars.gamemaser`. This gives access to all admin
+commands. The player command provided by the plugin, `/jointeam`, is gated by `quadwars.player.
+join`, which is granted by default.
+
+## Commands
+
+### `/qwtransition`
+
+This moves the game to the next phase.
+
+### `/qwsetphase <phase>`
+
+This sets the game to a specific phase. The phase can be `PREGAME`, `PREP`, `BATTLE`,
+or `POST_GAME`.
+
+### `/worldborder`
+
+QuadWars overrides the built in `/worldborder` command, because it conflicts with the world
+borders used for players during the prep phase. Usage is nearly identical to the [vanilla
+command](https://minecraft.wiki/w/Commands/worldborder),
+but the QuadWars version will sync across dimensions and take coordinate scaling into account.
+
+If you are trying to set the world border during the prep phase, change the config option
+`worldBorderSize`, and restart the server.
+
+### Useful Vanilla Commands
+
+#### `/team`
+
+This allows admin management of
+teams. [See the Minecraft wiki for usage](https://minecraft.wiki/w/Commands/team).
+
+**Do not use
+the add or remove commands, they will break the plugin.** Removing a team not managed by the
+plugin is ok and encouraged, since Minecraft only allows entities to be in one team.
+
+If changing a player's team during the prep phase, teleport them to the lobby world first,
+change their team, and then teleport them to the new team's quadrant. If you don't, the player
+will start taking world border damage when you change their team.
+
+## Suggestions for resolving a stalemate
 
 If you get to the battle phase and decide it is taking too long, here are some recommendations
 to encourage teams to make a move:
 
-## Use the world border
+### Use the world border
 
 Once you are in battle mode, the plugin unlocks its `/worldborder` command. It is a
 reimplementation of the vanilla one, but has the advantage of being synced across dimensions.
@@ -41,14 +88,14 @@ You mainly would want to use `/worldborder set <size> <time>` or `/worldborder a
 calculator to make sure you don't exceed a velocity of 5.612 m/s**. This is the maximum sprint
 speed of a player, and you will butcher your players if you exceed it.
 
-## Use the glowing effect
+### Use the glowing effect
 
 If teams are having trouble finding each other, you can use the glowing effect to make players
 much more visible. Players will even be colored with their team color set in the config. To do
 this, run `/effect give @a minecraft:glowing <time>`, where time is how long you want the effect
 to last, or `infinite` if you want it to last for the rest of the game.
 
-## Make a bonus chest
+### Make a bonus chest
 
 If you want to give players a reason to move, you can create a bonus chest with valuable items
 and give out the location to everyone. This may encourage players to move to the location and
@@ -60,6 +107,10 @@ QuadWars was built for Minecraft: Java Edition version 1.20.6, running Paper or 
 forks. Other versions of Minecraft may work, but are untested. (If a newer version has come out,
 please let me know how it goes!). Upstreams of Paper (Bukkit & Spigot) will *not* work, as this
 plugin utilizes the expanded API provided by Paper.
+
+QuadWars should integrate well with any plugin that also utilizes the Scoreboard Team API, as
+long as none of them create new teams. Minecraft only allows entities to be in one team,
+so any other plugin that adds entities to a team will not work with QuadWars.
 
 # bStats
 

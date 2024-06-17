@@ -62,13 +62,17 @@ public class PlayerController implements Listener {
                         Sound.sound(Key.key("event.raid.horn"), Sound.Source.MASTER,
                                 Float.MAX_VALUE, 1), 0, 256, 0);
                 for (Player player : Bukkit.getOnlinePlayers()) {
-                    player.setGameMode(GameMode.SURVIVAL);
+                    if (Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player) !=
+                            null) {
+                        player.setGameMode(GameMode.SURVIVAL);
+                    }
                 }
             }
             case POST_GAME -> {
                 Bukkit.getServer().stopSound(SoundStop.source(Sound.Source.MUSIC));
                 Bukkit.getServer()
-                        .playSound(Sound.sound(Key.key("music.credits"), Sound.Source.MUSIC, 1, 1));
+                        .playSound(Sound.sound(Key.key("music.credits"), Sound.Source.MUSIC, 1, 1),
+                                Sound.Emitter.self());
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     if (player.getGameMode().equals(GameMode.SURVIVAL)) {
                         player.setGameMode(GameMode.ADVENTURE);

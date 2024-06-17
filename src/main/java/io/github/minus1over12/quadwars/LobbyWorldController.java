@@ -1,6 +1,7 @@
 package io.github.minus1over12.quadwars;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.util.TriState;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
@@ -10,16 +11,12 @@ import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.geysermc.cumulus.form.SimpleForm;
-import org.geysermc.floodgate.api.FloodgateApi;
 
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Controls the lobby world.
@@ -60,25 +57,6 @@ public class LobbyWorldController implements Listener {
     }
     
     /**
-     * Sends a team join form to the player.
-     *
-     * @param player the player to send the form to
-     */
-    private static void sendTeamForm(Entity player) {
-        //todo this is untested and unfinished.
-        FloodgateApi instance = FloodgateApi.getInstance();
-        UUID uniqueId = player.getUniqueId();
-        if (instance.isFloodgatePlayer(uniqueId)) {
-            instance.sendForm(uniqueId,
-                    SimpleForm.builder().title("Select a Team").button("NE").button("SE")
-                            .button("SW").button("NW").validResultHandler(response -> {
-                                Bukkit.dispatchCommand(player,
-                                        "jointeam " + response.clickedButton().text());
-                            }).build());
-        }
-    }
-    
-    /**
      * Teleports players to the lobby world when they join if needed.
      *
      * @param event the event that triggered this method
@@ -96,12 +74,18 @@ public class LobbyWorldController implements Listener {
             switch (gameState) {
                 case PREGAME -> {
                     player.sendMessage(Component.text(
-                            "The game has not started yet, but you can " + "pick a team."));
-                    sendTeamForm(player);
+                                    "The game has not started yet, but you can pick a team with " +
+                                            "/jointeam.")
+                            .clickEvent(ClickEvent.suggestCommand("/jointeam ")));
+                    if (Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
+                        FloodgateIntegration.sendTeamForm(player);
+                    }
                 }
                 case PREP -> {
                     player.sendMessage(Component.text(
-                            "The game is in the prep phase, but you " + "can still join a team."));
+                                    "The game is in the prep phase, but you " + "can still join a" +
+                                            " team with /jointeam.")
+                            .clickEvent(ClickEvent.suggestCommand("/jointeam ")));
                 }
                 case BATTLE, POST_GAME -> player.sendMessage(
                         Component.text("The battle has started, new players may not join."));
@@ -121,6 +105,9 @@ public class LobbyWorldController implements Listener {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 player.teleportAsync(lobbyWorld.getSpawnLocation())
                         .thenRun(() -> player.setGameMode(GameMode.ADVENTURE));
+                if (Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
+                    FloodgateIntegration.sendTeamForm(player);
+                }
             }
         }
     }
