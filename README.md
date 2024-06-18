@@ -35,8 +35,8 @@ The plugin has three main phases:
 ## Permissions
 
 Admin functions of the plugin are gated by `quadwars.gamemaser`. This gives access to all admin
-commands. The player command provided by the plugin, `/jointeam`, is gated by `quadwars.player.
-join`, which is granted by default.
+commands. The player command provided by the plugin, `/jointeam`, is gated by
+`quadwars.player.join`, which is granted by default.
 
 ## Commands
 
