@@ -15,7 +15,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.Plugin;
 
 /**
  * Controls the players in the game.
@@ -23,6 +22,11 @@ import org.bukkit.plugin.Plugin;
  * @author War Pigeon
  */
 public class PlayerController implements Listener {
+    /**
+     * The standard height of the world, used to make the battle phase start horn sound like it
+     * is coming from the sky.
+     */
+    private static final int WORLD_HEIGHT = 256;
     /**
      * The current state of the game.
      */
@@ -41,9 +45,10 @@ public class PlayerController implements Listener {
      *
      * @param plugin the plugin creating this controller.
      */
-    public PlayerController(Plugin plugin) {
+    public PlayerController(QuadWars plugin) {
         killOnQuit = plugin.getConfig().getBoolean("killOnQuit");
         hardcore = plugin.getConfig().getBoolean(QuadWars.HARDCORE_CONFIG_PATH);
+        state = plugin.getGameState();
     }
     
     /**
@@ -60,7 +65,7 @@ public class PlayerController implements Listener {
             case BATTLE -> {
                 Bukkit.getServer().playSound(
                         Sound.sound(Key.key("event.raid.horn"), Sound.Source.MASTER,
-                                Float.MAX_VALUE, 1), 0, 256, 0);
+                                Float.MAX_VALUE, 1), 0, WORLD_HEIGHT, 0);
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     if (Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player) !=
                             null) {

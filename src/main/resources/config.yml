@@ -30,10 +30,10 @@ seSuffix: ""
 swSuffix: ""
 
 # These are the outline colors for each team.
-nwColor: 9
-neColor: 10
-seColor: 12
-swColor: 14
+nwColor: "blue"
+neColor: "green"
+seColor: "red"
+swColor: "yellow"
 
 # The name of the default world to use.
 defaultWorld: "world"

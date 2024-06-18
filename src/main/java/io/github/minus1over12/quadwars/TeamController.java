@@ -40,6 +40,11 @@ public class TeamController implements Listener {
      */
     static final Pattern QUADWARS_PREFIX = Pattern.compile(TEAM_PREFIX);
     /**
+     * Used to downshift the sounds played when a team is eliminated or the game is over when
+     * playing with hardcore.
+     */
+    private static final float MINIMUM_PITCH = 0.5f;
+    /**
      * The logger for the plugin.
      */
     private final Logger logger;
@@ -86,7 +91,8 @@ public class TeamController implements Listener {
             team.prefix(config.getRichMessage(teamKey + "Prefix"));
             team.displayName(config.getRichMessage(teamKey + "DisplayName"));
             team.suffix(config.getRichMessage(teamKey + "Suffix"));
-            team.color(NamedTextColor.namedColor(config.getInt(teamKey + "Color")));
+            team.color(NamedTextColor.NAMES.value(
+                    Objects.requireNonNull(config.getString(teamKey + "Color")).toLowerCase()));
         }
         defaultWorld = Objects.requireNonNull(
                 Bukkit.getWorld(Objects.requireNonNull(config.getString("defaultWorld"))),
@@ -163,14 +169,15 @@ public class TeamController implements Listener {
                                 .append(Component.text(" has won!")));
                 Bukkit.getServer().playSound(
                         Sound.sound(Key.key("entity.ender_dragon.death"), Sound.Source.MASTER, 1,
-                                0.5f), Sound.Emitter.self());
+                                MINIMUM_PITCH), Sound.Emitter.self());
                 
                 Bukkit.getPluginManager().callEvent(new GameStateChangeEvent(GameState.POST_GAME));
             } else if (playerTeam != null && !aliveTeams.contains(playerTeam)) {
                 Bukkit.broadcast(
                         playerTeam.displayName().append(Component.text(" has been eliminated!")));
                 Bukkit.getServer().playSound(
-                        Sound.sound(Key.key("entity.wither.death"), Sound.Source.MASTER, 1, 0.5f),
+                        Sound.sound(Key.key("entity.wither.death"), Sound.Source.MASTER, 1,
+                                Math.nextUp(MINIMUM_PITCH)),
                         Sound.Emitter.self());
             }
         }
@@ -200,7 +207,9 @@ public class TeamController implements Listener {
                 });
                 
             }
-            entity.sendMessage(Component.text("Added you to ").append(team.displayName()));
+            entity.sendMessage(
+                    Component.translatable("commands.team.join.success.single", entity.name(),
+                            team.displayName()));
         } else {
             entity.sendMessage(
                     Component.textOfChildren(Component.text("Team ").color(NamedTextColor.RED),

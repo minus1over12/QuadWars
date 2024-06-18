@@ -25,6 +25,18 @@ import java.util.Objects;
  */
 public class LobbyWorldController implements Listener {
     /**
+     * The size of the lobby world border.
+     */
+    private static final int LOBBY_WORLD_BORDER_SIZE = 16;
+    /**
+     * The name of the Floodgate plugin.
+     */
+    private static final String FLOODGATE_NAME = "floodgate";
+    /**
+     * The command suggestion to join a team.
+     */
+    private static final String JOINTEAM_COMMAND_SUGGESTION = "/jointeam ";
+    /**
      * The lobby world.
      */
     private final World lobbyWorld;
@@ -51,9 +63,10 @@ public class LobbyWorldController implements Listener {
         lobbyWorld.setSendViewDistance(2);
         lobbyWorld.setSimulationDistance(2);
         lobbyWorld.setViewDistance(2);
+        lobbyWorld.setHardcore(false);
         WorldBorder worldBorder = lobbyWorld.getWorldBorder();
         worldBorder.setCenter(lobbyWorld.getSpawnLocation());
-        worldBorder.setSize(16);
+        worldBorder.setSize(LOBBY_WORLD_BORDER_SIZE);
     }
     
     /**
@@ -76,8 +89,8 @@ public class LobbyWorldController implements Listener {
                     player.sendMessage(Component.text(
                                     "The game has not started yet, but you can pick a team with " +
                                             "/jointeam.")
-                            .clickEvent(ClickEvent.suggestCommand("/jointeam ")));
-                    if (Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
+                            .clickEvent(ClickEvent.suggestCommand(JOINTEAM_COMMAND_SUGGESTION)));
+                    if (Bukkit.getPluginManager().isPluginEnabled(FLOODGATE_NAME)) {
                         FloodgateIntegration.sendTeamForm(player);
                     }
                 }
@@ -85,7 +98,7 @@ public class LobbyWorldController implements Listener {
                     player.sendMessage(Component.text(
                                     "The game is in the prep phase, but you " + "can still join a" +
                                             " team with /jointeam.")
-                            .clickEvent(ClickEvent.suggestCommand("/jointeam ")));
+                            .clickEvent(ClickEvent.suggestCommand(JOINTEAM_COMMAND_SUGGESTION)));
                 }
                 case BATTLE, POST_GAME -> player.sendMessage(
                         Component.text("The battle has started, new players may not join."));
@@ -105,7 +118,7 @@ public class LobbyWorldController implements Listener {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 player.teleportAsync(lobbyWorld.getSpawnLocation())
                         .thenRun(() -> player.setGameMode(GameMode.ADVENTURE));
-                if (Bukkit.getPluginManager().isPluginEnabled("floodgate")) {
+                if (Bukkit.getPluginManager().isPluginEnabled(FLOODGATE_NAME)) {
                     FloodgateIntegration.sendTeamForm(player);
                 }
             }

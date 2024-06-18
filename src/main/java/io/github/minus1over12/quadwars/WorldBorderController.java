@@ -2,6 +2,7 @@ package io.github.minus1over12.quadwars;
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -42,9 +43,49 @@ public class WorldBorderController implements Listener {
      */
     static final int AXIS_BUFFER_OFFSET = 128;
     /**
+     * The command string for the world border.
+     */
+    static final String WORLDBORDER_COMMAND = "worldborder";
+    /**
+     * The command string for the world border damage.
+     */
+    static final String DAMAGE_COMMAND = "damage";
+    /**
+     * The command string for the world border warning.
+     */
+    static final String WARNING_COMMAND = "warning";
+    /**
+     * The command string for the world border distance.
+     */
+    static final String DISTANCE_COMMAND = "distance";
+    /**
      * The prefix for QuadWars teams.
      */
     private static final Pattern QUADWARS_PREFIX = TeamController.QUADWARS_PREFIX;
+    /**
+     * The command string for the world border amount.
+     */
+    static final String AMOUNT_COMMAND = "amount";
+    /**
+     * The command string for the world border buffer.
+     */
+    static final String BUFFER_COMMAND = "buffer";
+    /**
+     * The command string for getting world border sizes.
+     */
+    static final String GET_COMMAND = "get";
+    /**
+     * The command string for the world border time.
+     */
+    static final String TIME_COMMAND = "time";
+    /**
+     * The command string for the setting world border size.
+     */
+    static final String SET_COMMAND = "set";
+    /**
+     * The command string for the adding to the world border size.
+     */
+    static final String ADD_COMMAND = "add";
     /**
      * The size of the world border to use.
      */
@@ -315,6 +356,49 @@ public class WorldBorderController implements Listener {
     }
     
     /**
+     * Sends a message to the sender about the world border being set.
+     *
+     * @param sender      the sender to send the message to
+     * @param worldBorder the world border to send the message about
+     */
+    private static void sendWorldBorderSetMessage(@NotNull Audience sender,
+                                                  WorldBorder worldBorder) {
+        sender.sendMessage(Component.textOfChildren(
+                Component.text(Objects.requireNonNull(worldBorder.getWorld()).getName() + ": "),
+                Component.translatable("commands.worldborder.set.immediate",
+                        Component.text(worldBorder.getSize()))));
+    }
+    
+    /**
+     * Sets the size of a world border over time.
+     *
+     * @param sender       the sender to send the message to
+     * @param arg2         the time to take to set the border
+     * @param worldBorder  the world border to set the size of
+     * @param originalSize the original size of the world border
+     * @param newSize      the new size of the world border
+     */
+    private static void setSizeOverTime(@NotNull Audience sender, long arg2,
+                                        WorldBorder worldBorder, double originalSize,
+                                        double newSize) {
+        worldBorder.setSize(newSize, arg2);
+        Component message;
+        if (newSize > originalSize) {
+            message =
+                    Component.translatable("commands.worldborder.set.grow", Component.text(newSize),
+                            Component.text(arg2));
+        } else if (newSize < originalSize) {
+            message = Component.translatable("commands.worldborder.set.shrink",
+                    Component.text(newSize), Component.text(arg2));
+        } else {
+            message = Component.translatable("commands.worldborder.set.failed.nochange");
+        }
+        sender.sendMessage(Component.textOfChildren(
+                Component.text(Objects.requireNonNull(worldBorder.getWorld()).getName() + ": "),
+                message));
+    }
+    
+    /**
      * Processes a world border command.
      *
      * @param sender the sender of the command
@@ -326,7 +410,7 @@ public class WorldBorderController implements Listener {
             return false;
         }
         switch (args[0]) {
-            case "add" -> {
+            case ADD_COMMAND -> {
                 if (args.length < 2 || args.length > 3) {
                     return false;
                 }
@@ -341,6 +425,7 @@ public class WorldBorderController implements Listener {
                         worldBorder.setSize(worldBorder.getSize() + (arg1 /
                                 Objects.requireNonNull(worldBorder.getWorld())
                                         .getCoordinateScale()));
+                        sendWorldBorderSetMessage(sender, worldBorder);
                     }
                 } else {
                     long arg2;
@@ -350,14 +435,16 @@ public class WorldBorderController implements Listener {
                         return false;
                     }
                     for (WorldBorder worldBorder : getWorldBorderList()) {
-                        worldBorder.setSize(worldBorder.getSize() + (arg1 /
+                        double originalSize = worldBorder.getSize();
+                        double newSize = originalSize + (arg1 /
                                 Objects.requireNonNull(worldBorder.getWorld())
-                                        .getCoordinateScale()), arg2);
+                                        .getCoordinateScale());
+                        setSizeOverTime(sender, arg2, worldBorder, originalSize, newSize);
                     }
                 }
                 return true;
             }
-            case "set" -> {
+            case SET_COMMAND -> {
                 if (args.length < 2 || args.length > 3) {
                     return false;
                 }
@@ -371,6 +458,7 @@ public class WorldBorderController implements Listener {
                     for (WorldBorder worldBorder : getWorldBorderList()) {
                         worldBorder.setSize(arg1 / Objects.requireNonNull(worldBorder.getWorld())
                                 .getCoordinateScale());
+                        sendWorldBorderSetMessage(sender, worldBorder);
                     }
                 } else {
                     long arg2;
@@ -380,12 +468,15 @@ public class WorldBorderController implements Listener {
                         return false;
                     }
                     for (WorldBorder worldBorder : getWorldBorderList()) {
-                        worldBorder.setSize(arg1, arg2);
+                        double originalSize = worldBorder.getSize();
+                        double newSize = arg1 /
+                                Objects.requireNonNull(worldBorder.getWorld()).getCoordinateScale();
+                        setSizeOverTime(sender, arg2, worldBorder, originalSize, newSize);
                     }
                 }
                 return true;
             }
-            case "damage" -> {
+            case DAMAGE_COMMAND -> {
                 if (args.length != 3) {
                     return false;
                 }
@@ -396,16 +487,22 @@ public class WorldBorderController implements Listener {
                     return false;
                 }
                 switch (args[1]) {
-                    case "amount" -> {
+                    case AMOUNT_COMMAND -> {
                         for (WorldBorder worldBorder : getWorldBorderList()) {
                             worldBorder.setDamageAmount(arg2);
                         }
+                        sender.sendMessage(
+                                Component.translatable("commands.worldborder.damage.amount.success",
+                                        Component.text(arg2)));
                         return true;
                     }
-                    case "buffer" -> {
+                    case BUFFER_COMMAND -> {
                         for (WorldBorder worldBorder : getWorldBorderList()) {
                             worldBorder.setDamageBuffer(arg2);
                         }
+                        sender.sendMessage(
+                                Component.translatable("commands.worldborder.damage.buffer.success",
+                                        Component.text(arg2)));
                         return true;
                     }
                     default -> {
@@ -413,15 +510,16 @@ public class WorldBorderController implements Listener {
                     }
                 }
             }
-            case "get" -> {
+            case GET_COMMAND -> {
                 for (WorldBorder worldBorder : getWorldBorderList()) {
-                    sender.sendMessage(Component.text("The world border for " +
-                            Objects.requireNonNull(worldBorder.getWorld()).getName() +
-                            " is currently " + worldBorder.getSize() + " block(s) wide"));
+                    sender.sendMessage(Component.textOfChildren(Component.text(
+                                    Objects.requireNonNull(worldBorder.getWorld()).getName() + ':' + ' '),
+                            Component.translatable("commands.worldborder.get",
+                                    Component.text(worldBorder.getSize()))));
                 }
                 return true;
             }
-            case "warning" -> {
+            case WARNING_COMMAND -> {
                 if (args.length != 3) {
                     return false;
                 }
@@ -432,16 +530,22 @@ public class WorldBorderController implements Listener {
                     return false;
                 }
                 switch (args[1]) {
-                    case "time" -> {
+                    case TIME_COMMAND -> {
                         for (WorldBorder worldBorder : getWorldBorderList()) {
                             worldBorder.setWarningTime(arg2);
                         }
+                        sender.sendMessage(
+                                Component.translatable("commands.worldborder.warning.time.success",
+                                        Component.text(arg2)));
                         return true;
                     }
-                    case "distance" -> {
+                    case DISTANCE_COMMAND -> {
                         for (WorldBorder worldBorder : getWorldBorderList()) {
                             worldBorder.setWarningDistance(arg2);
                         }
+                        sender.sendMessage(Component.translatable(
+                                "commands.worldborder.warning.distance.success",
+                                Component.text(arg2)));
                         return true;
                     }
                     default -> {
