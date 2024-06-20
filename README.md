@@ -18,6 +18,27 @@ The plugin has three main phases:
    borders, and enables PvP and hardcore. Teams can attack enter each other's quadrants and attack
    their bases and players. The game ends when only one team is left.
 
+# Features
+
+## Separate Team World Borders
+
+Each team gets their own world border during the prep phase. This keeps teams from interfering with
+each other: flying machines won't travel across, cannons can't remotely kill players, and
+attempting to stray outside the world border will result in damage that increases as you get
+further out.
+
+## Self-Service Team Selection
+
+Don't want to spend time assigning players to teams? Players can join a team themselves using the
+`/jointeam` command. The option to have teams assigned by an op is available too by denying a
+permission.
+
+## Goal Flexibility
+
+By default, the plugin config will assume that for your battle you will want to do a last team
+standing game and switch on hardcore, but it's not required. If you want to do capture the flag
+or another style of event that doesn't need hardcore, you can turn it off.
+
 # Things players should know
 
 * Players can send messages to just their team using Vanilla's `/teammsg` (aliased to `/tm`)
@@ -36,9 +57,9 @@ The plugin has three main phases:
 
 Admin functions of the plugin are gated by `quadwars.gamemaser`. This gives access to all admin
 commands. The player command provided by the plugin, `/jointeam`, is gated by
-`quadwars.player.join`, which is granted by default.
+`quadwars.player.jointeam`, which is granted by default.
 
-## Commands
+## Admin Commands
 
 ### `/qwtransition`
 
@@ -58,6 +79,10 @@ but the QuadWars version will sync across dimensions and take coordinate scaling
 
 If you are trying to set the world border during the prep phase, change the config option
 `worldBorderSize`, and restart the server.
+
+### `/qwgetphase`
+
+This gets the current phase of the game the plugin has set.
 
 ### Useful Vanilla Commands
 
@@ -79,15 +104,6 @@ will start taking world border damage when you change their team.
 If you get to the battle phase and decide it is taking too long, here are some recommendations
 to encourage teams to make a move:
 
-### Use the world border
-
-Once you are in battle mode, the plugin unlocks its `/worldborder` command. It is a
-reimplementation of the vanilla one, but has the advantage of being synced across dimensions.
-You mainly would want to use `/worldborder set <size> <time>` or `/worldborder add -<size>
-<time>`. When doing this, **use a
-calculator to make sure you don't exceed a velocity of 5.612 m/s**. This is the maximum sprint
-speed of a player, and you will butcher your players if you exceed it.
-
 ### Use the glowing effect
 
 If teams are having trouble finding each other, you can use the glowing effect to make players
@@ -100,6 +116,22 @@ to last, or `infinite` if you want it to last for the rest of the game.
 If you want to give players a reason to move, you can create a bonus chest with valuable items
 and give out the location to everyone. This may encourage players to move to the location and
 fight for the chest's content.
+
+### Use the world border
+
+Once you are in battle mode, the plugin unlocks its `/worldborder` command. It is a
+reimplementation of the vanilla one, but has the advantage of being synced across dimensions.
+You mainly would want to use `/worldborder set <size> <time>` or `/worldborder add -<size>
+<time>`. When doing this, **use a
+calculator to make sure you don't exceed a velocity of 5.612 m/s**. This is the maximum sprint
+speed of a player, and you will butcher your players if you exceed it.
+
+### Use spread players
+
+If you want to force everyone to move, you can use
+the [`/spreadplayers`](https://minecraft.wiki/w/Commands/spreadplayers) command to move teams
+to a random spot within a certain radius using
+`spreadplayers <center> <spreadDistance> <maxRange> true @a`
 
 # Compatibility
 

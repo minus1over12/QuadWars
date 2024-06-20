@@ -9,12 +9,21 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPistonEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -24,6 +33,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -134,6 +144,20 @@ public class WorldBorderController implements Listener {
     }
     
     /**
+     * Gets the quadrant of a location.
+     *
+     * @param location the location to get the quadrant of
+     * @return the quadrant of the location
+     */
+    private static Quadrant getQuadrantFromLocation(Location location) {
+        if (location.getX() < 0) {
+            return location.getZ() < 0 ? Quadrant.SW : Quadrant.SE;
+        } else {
+            return location.getZ() < 0 ? Quadrant.NW : Quadrant.NE;
+        }
+    }
+    
+    /**
      * Sets the world border for joining players.
      *
      * @param event the event that triggered this method
@@ -143,7 +167,12 @@ public class WorldBorderController implements Listener {
         Player player = event.getPlayer();
         //I'm not sure why the WorldBorder has to be set in the next tick instead of the current
         // one, but it does.
-        player.getScheduler().run(plugin, ignored -> makeWorldBorder(player), null);
+        player.getScheduler().run(plugin, ignored -> setPlayerWorldBorder(player), null);
+    }
+    
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void setGameStateEarly(GameStateChangeEvent event) {
+        gameState = event.getState();
     }
     
     /**
@@ -154,23 +183,8 @@ public class WorldBorderController implements Listener {
     @EventHandler
     public void onGameStateChange(GameStateChangeEvent event) {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            makeWorldBorder(player);
+            setPlayerWorldBorder(player);
         }
-    }
-    
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void setGameStateEarly(GameStateChangeEvent event) {
-        gameState = event.getState();
-    }
-    
-    /**
-     * Sets a new world border for players when they switch worlds.
-     *
-     * @param event the event that triggered this method
-     */
-    @EventHandler
-    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
-        makeWorldBorder(event.getPlayer());
     }
     
     /**
@@ -194,13 +208,13 @@ public class WorldBorderController implements Listener {
     }
     
     /**
-     * Sets the world border for players when they respawn.
+     * Sets a new world border for players when they switch worlds.
      *
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerPostRespawn(PlayerPostRespawnEvent event) {
-        makeWorldBorder(event.getPlayer());
+    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+        setPlayerWorldBorder(event.getPlayer());
     }
     
     /**
@@ -310,11 +324,21 @@ public class WorldBorderController implements Listener {
     }
     
     /**
+     * Sets the world border for players when they respawn.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onPlayerPostRespawn(PlayerPostRespawnEvent event) {
+        setPlayerWorldBorder(event.getPlayer());
+    }
+    
+    /**
      * Creates a new world border for a quadrant at a world's scaling.
      *
      * @param player the player to set the world border for
      */
-    private void makeWorldBorder(Player player) {
+    private void setPlayerWorldBorder(Player player) {
         World world = player.getWorld();
         if (gameState != GameState.PREP ||
                 world.getEnvironment().equals(World.Environment.THE_END) ||
@@ -323,19 +347,7 @@ public class WorldBorderController implements Listener {
         } else {
             Team team = Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player);
             if (team != null) {
-                WorldBorder worldBorder = Bukkit.createWorldBorder();
-                Quadrant quadrant = getQuadrant(team);
-                double scale = world.getCoordinateScale();
-                //DO NOT SCALE THE CENTER!!
-                //The API does it for you
-                // The 128 part is for preventing accidental cross-quadrant portal linkage.
-                worldBorder.setCenter((worldBorderSize / 2) * quadrant.xSign +
-                                (AXIS_BUFFER_OFFSET * quadrant.xSign),
-                        (worldBorderSize / 2) * quadrant.zSign +
-                                (AXIS_BUFFER_OFFSET * quadrant.zSign));
-                //The size does need to be scaled though. Thanks Bukkit.
-                worldBorder.setSize(worldBorderSize / scale);
-                worldBorder.setDamageAmount(0.5);
+                WorldBorder worldBorder = makeWorldBorder(getQuadrant(team), world);
                 player.setWorldBorder(worldBorder);
             }
         }
@@ -568,5 +580,104 @@ public class WorldBorderController implements Listener {
         return Bukkit.getWorlds().stream()
                 .filter(world -> !ignoredWorldKeys.contains(world.getKey()))
                 .map(World::getWorldBorder).toList();
+    }
+    
+    /**
+     * Creates a new world border.
+     *
+     * @param quadrant the quadrant to make the world border for
+     * @param world    the world to make the world border in
+     * @return the new world border
+     */
+    private @NotNull WorldBorder makeWorldBorder(Quadrant quadrant, World world) {
+        WorldBorder worldBorder = Bukkit.createWorldBorder();
+        double scale = world.getCoordinateScale();
+        //DO NOT SCALE THE CENTER!!
+        //The API does it for you
+        // The 128 part is for preventing accidental cross-quadrant portal linkage.
+        worldBorder.setCenter(
+                (worldBorderSize / 2) * quadrant.xSign + (AXIS_BUFFER_OFFSET * quadrant.xSign),
+                (worldBorderSize / 2) * quadrant.zSign + (AXIS_BUFFER_OFFSET * quadrant.zSign));
+        //The size does need to be scaled though. Thanks Bukkit.
+        worldBorder.setSize(worldBorderSize / scale);
+        worldBorder.setDamageAmount(0.5);
+        return worldBorder;
+    }
+    
+    /**
+     * Prevents pistons from moving outside active team quadrants.
+     *
+     * @param event the event that triggered this method
+     */
+    private void onBlockPistonEventHelper(BlockPistonEvent event) {
+        if (gameState == GameState.PREP) {
+            Block piston = event.getBlock();
+            if (Arrays.stream(Quadrant.values()).noneMatch(
+                    quadrant -> makeWorldBorder(quadrant, piston.getWorld()).isInside(
+                            piston.getLocation()))) {
+                event.setCancelled(true);
+            }
+        }
+    }
+    
+    /**
+     * Sends events to the method that prevents pistons from moving outside active team quadrants.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onBlockPistonEvent(BlockPistonExtendEvent event) {
+        onBlockPistonEventHelper(event);
+    }
+    
+    /**
+     * Sends events to the method that prevents pistons from moving outside active team quadrants.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onBlockPistonEvent(BlockPistonRetractEvent event) {
+        onBlockPistonEventHelper(event);
+    }
+    
+    /**
+     * Prevents projectiles from doing damage outside their spawn quadrant in prep phase.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onProjectileHitEvent(ProjectileHitEvent event) {
+        cancelOOBEntityEventIfNeeded(event);
+    }
+    
+    /**
+     * Prevents entities from exploding outside their spawn quadrant in prep phase.
+     *
+     * @param event the event that triggered this method
+     * @param <T>   the type of event
+     */
+    private <T extends EntityEvent & Cancellable> void cancelOOBEntityEventIfNeeded(T event) {
+        if (gameState == GameState.PREP) {
+            Entity projectile = event.getEntity();
+            Location origin = projectile.getOrigin();
+            if (origin != null) {
+                Quadrant spawnQuadrant = getQuadrantFromLocation(origin);
+                if (spawnQuadrant != null) {
+                    if (!getQuadrantFromLocation(projectile.getLocation()).equals(spawnQuadrant)) {
+                        event.setCancelled(true);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Prevents entities from exploding outside their spawn quadrant in prep phase.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onEntityExplodeEvent(EntityExplodeEvent event) {
+        cancelOOBEntityEventIfNeeded(event);
     }
 }

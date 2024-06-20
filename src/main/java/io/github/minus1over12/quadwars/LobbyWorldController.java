@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.Plugin;
 
 import java.util.Objects;
 
@@ -46,6 +47,11 @@ public class LobbyWorldController implements Listener {
     private GameState gameState;
     
     /**
+     * The plugin used for scheduling tasks.
+     */
+    private final Plugin plugin;
+    
+    /**
      * Creates a lobby world control object.
      *
      * @param plugin the plugin to get the game state from
@@ -67,6 +73,7 @@ public class LobbyWorldController implements Listener {
         WorldBorder worldBorder = lobbyWorld.getWorldBorder();
         worldBorder.setCenter(lobbyWorld.getSpawnLocation());
         worldBorder.setSize(LOBBY_WORLD_BORDER_SIZE);
+        this.plugin = plugin;
     }
     
     /**
@@ -91,14 +98,21 @@ public class LobbyWorldController implements Listener {
                                             "/jointeam.")
                             .clickEvent(ClickEvent.suggestCommand(JOINTEAM_COMMAND_SUGGESTION)));
                     if (Bukkit.getPluginManager().isPluginEnabled(FLOODGATE_NAME)) {
-                        FloodgateIntegration.sendTeamForm(player);
+                        //Cumulus takes 2 ticks to become functional.
+                        player.getScheduler().runDelayed(plugin,
+                                ignored -> FloodgateIntegration.sendTeamForm(player), null, 2);
                     }
                 }
                 case PREP -> {
                     player.sendMessage(Component.text(
-                                    "The game is in the prep phase, but you " + "can still join a" +
+                                    "The game is in the prep phase, but you can still join a" +
                                             " team with /jointeam.")
                             .clickEvent(ClickEvent.suggestCommand(JOINTEAM_COMMAND_SUGGESTION)));
+                    if (Bukkit.getPluginManager().isPluginEnabled(FLOODGATE_NAME)) {
+                        //Cumulus takes 2 ticks to become functional.
+                        player.getScheduler().runDelayed(plugin,
+                                ignored -> FloodgateIntegration.sendTeamForm(player), null, 2);
+                    }
                 }
                 case BATTLE, POST_GAME -> player.sendMessage(
                         Component.text("The battle has started, new players may not join."));

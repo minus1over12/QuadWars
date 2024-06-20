@@ -26,7 +26,7 @@ public enum FloodgateIntegration {
     static void sendTeamForm(Entity player) {
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         if (scoreboard.getEntityTeam(player) == null &&
-                player.hasPermission("quadwars.player.join")) {
+                player.hasPermission("quadwars.player.jointeam")) {
             FloodgateApi instance = FloodgateApi.getInstance();
             UUID uniqueId = player.getUniqueId();
             if (instance.isFloodgatePlayer(uniqueId)) {
