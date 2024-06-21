@@ -139,7 +139,7 @@ speed of a player, and you will butcher your players if you exceed it.
 If you want to force everyone to move, you can use
 the [`/spreadplayers`](https://minecraft.wiki/w/Commands/spreadplayers) command to move teams
 to a random spot within a certain radius using
-`spreadplayers <center> <spreadDistance> <maxRange> true @a`
+`spreadplayers <center> <spreadDistance> <maxRange> true @a`.
 
 # Things players should know
 
