@@ -118,6 +118,8 @@ public class TeamController implements Listener {
                     if (team != null) {
                         Quadrant quadrant = Quadrant.valueOf(
                                 QUADWARS_PREFIX.matcher(team.getName()).replaceFirst(""));
+                        player.sendMessage(Component.text(
+                                "Prep phase is starting, you are being teleported…"));
                         player.teleportAsync(defaultWorld.getHighestBlockAt(
                                                 quadrant.xSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2,
                                                 quadrant.zSign * WorldBorderController.AXIS_BUFFER_OFFSET * 2)

@@ -2,7 +2,35 @@ QuadWars is a plugin allowing four teams to compete in a Minecraft world. Each t
 quadrant of the world to build and gather resources in undisturbed, and when it's time for
 battle can attack in the world they have been preparing.
 
-# Phases
+# Features
+
+## Separate Team World Borders
+
+![Each team's world border, shown using Lunar Client's multiple world border feature](images/FourWorldBordersNether.png)
+
+Each team gets their own world border during the prep phase. This keeps teams from interfering with
+each other: flying machines won't travel across, cannons can't remotely kill players, and
+attempting to stray outside the world border will result in damage that increases as you get
+further out.
+
+## Self-Service Team Selection
+
+![The chat bar showing the command `/jointeam`](images/JoinTeamCommand.png) → ![Message saying that a player was added to the team they selected](images/JoinedTeamMessage.png)
+
+Don't want to spend time assigning players to teams? Players can join a team themselves using the
+`/jointeam` command. The option to have teams assigned by an op is available too by denying a
+permission.
+
+## Goal Flexibility
+
+![A yellow team player walking with a CTFBuddy flag](images/PlayerWalkingWithFlag.png)
+By default, the plugin config will assume that for your battle you will want to do a last team
+standing game and switch on hardcore, but it's not required. If you want to do capture the flag
+or another style of event that doesn't need hardcore, you can turn it off.
+
+## Phases
+
+![](images/BattlePhaseStartTimer.png)
 
 The plugin has three main phases:
 
@@ -18,44 +46,24 @@ The plugin has three main phases:
    borders, and enables PvP and hardcore. Teams can attack enter each other's quadrants and attack
    their bases and players. The game ends when only one team is left.
 
-# Features
+## Integrations
 
-## Separate Team World Borders
-
-Each team gets their own world border during the prep phase. This keeps teams from interfering with
-each other: flying machines won't travel across, cannons can't remotely kill players, and
-attempting to stray outside the world border will result in damage that increases as you get
-further out.
-
-## Self-Service Team Selection
-
-Don't want to spend time assigning players to teams? Players can join a team themselves using the
-`/jointeam` command. The option to have teams assigned by an op is available too by denying a
-permission.
-
-## Goal Flexibility
-
-By default, the plugin config will assume that for your battle you will want to do a last team
-standing game and switch on hardcore, but it's not required. If you want to do capture the flag
-or another style of event that doesn't need hardcore, you can turn it off.
-
-# Things players should know
-
-* Players can send messages to just their team using Vanilla's `/teammsg` (aliased to `/tm`)
-  command.
-* Avoid building nether portals near the inner edges of the world border. It is possible for the
-  game to place the destination portal outside the team's world border, causing a potentially
-  deadly scenario where getting your items back can be near impossible.
-* Vanilla allows players to see their teammates when using invisibility potions and prevents
-  friendly fire.
-* Players can join a team using `/jointeam`. Players connected using Floodgate+Geyser will get a
-  popup to select a team. Once a team is selected, they can not change it themselves.
+* *Floodgate:* QuadWars will utilize Bedrock's forms feature to show players a team selection UI
+  if they do not already have a team. No need to type on a gamepad!
+* *Apollo (Lunar Client):* If you have [Apollo](https://modrinth.com/plugin/lunar-client-apollo)
+  installed, QuadWars can utilize some of the extra features available in Lunar Client. Lunar
+  allows servers to render more than one world border at a time, meaning QuadWars can render all
+  four team borders, instead of just the one for your own team. QuadWars will also have Lunar
+  show a logout warning during the battle phase.
+* *Anything using Scoreboard Teams:* QuadWars
+  uses [Vanilla's Teams](https://minecraft.wiki/w/Scoreboard#Teams), meaning anything else that
+  can read Scoreboard Teams will work with QuadWars.
 
 # Admin Usage
 
 ## Permissions
 
-Admin functions of the plugin are gated by `quadwars.gamemaser`. This gives access to all admin
+Admin functions of the plugin are gated by `quadwars.gamemaster`. This gives access to all admin
 commands. The player command provided by the plugin, `/jointeam`, is gated by
 `quadwars.player.jointeam`, which is granted by default.
 
@@ -132,6 +140,18 @@ If you want to force everyone to move, you can use
 the [`/spreadplayers`](https://minecraft.wiki/w/Commands/spreadplayers) command to move teams
 to a random spot within a certain radius using
 `spreadplayers <center> <spreadDistance> <maxRange> true @a`
+
+# Things players should know
+
+* Players can send messages to just their team using Vanilla's `/teammsg` (aliased to `/tm`)
+  command.
+* Avoid building nether portals near the inner edges of the world border. It is possible for the
+  game to place the destination portal outside the team's world border, causing a potentially
+  deadly scenario where getting your items back can be near impossible.
+* Vanilla allows players to see their teammates when using invisibility potions and prevents
+  friendly fire.
+* Players can join a team using `/jointeam`. Players connected using Floodgate+Geyser will get a
+  popup to select a team. Once a team is selected, they can not change it themselves.
 
 # Compatibility
 

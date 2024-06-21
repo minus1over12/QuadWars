@@ -93,25 +93,37 @@ public class LobbyWorldController implements Listener {
             player.setGameMode(GameMode.ADVENTURE);
             switch (gameState) {
                 case PREGAME -> {
-                    player.sendMessage(Component.text(
-                                    "The game has not started yet, but you can pick a team with " +
-                                            "/jointeam.")
-                            .clickEvent(ClickEvent.suggestCommand(JOINTEAM_COMMAND_SUGGESTION)));
-                    if (Bukkit.getPluginManager().isPluginEnabled(FLOODGATE_NAME)) {
-                        //Cumulus takes 2 ticks to become functional.
-                        player.getScheduler().runDelayed(plugin,
-                                ignored -> FloodgateIntegration.sendTeamForm(player), null, 2);
+                    if (player.hasPermission(QuadWars.JOIN_TEAM_PERMISSION)) {
+                        player.sendMessage(Component.text(
+                                "The game has not started yet, but you can pick a team with " +
+                                        "/jointeam.").clickEvent(
+                                ClickEvent.suggestCommand(JOINTEAM_COMMAND_SUGGESTION)));
+                        if (Bukkit.getPluginManager().isPluginEnabled(FLOODGATE_NAME)) {
+                            //Cumulus takes 2 ticks to become functional.
+                            player.getScheduler().runDelayed(plugin,
+                                    ignored -> FloodgateIntegration.sendTeamForm(player), null, 2);
+                        }
+                    } else {
+                        player.sendMessage(Component.text(
+                                "The game has not started yet, please ask an op to add you to a " +
+                                        "team."));
                     }
                 }
                 case PREP -> {
-                    player.sendMessage(Component.text(
-                                    "The game is in the prep phase, but you can still join a" +
-                                            " team with /jointeam.")
-                            .clickEvent(ClickEvent.suggestCommand(JOINTEAM_COMMAND_SUGGESTION)));
-                    if (Bukkit.getPluginManager().isPluginEnabled(FLOODGATE_NAME)) {
-                        //Cumulus takes 2 ticks to become functional.
-                        player.getScheduler().runDelayed(plugin,
-                                ignored -> FloodgateIntegration.sendTeamForm(player), null, 2);
+                    if (player.hasPermission(QuadWars.JOIN_TEAM_PERMISSION)) {
+                        player.sendMessage(Component.text(
+                                "The game is in the prep phase, but you can still join a" +
+                                        " team with /jointeam.").clickEvent(
+                                ClickEvent.suggestCommand(JOINTEAM_COMMAND_SUGGESTION)));
+                        if (Bukkit.getPluginManager().isPluginEnabled(FLOODGATE_NAME)) {
+                            //Cumulus takes 2 ticks to become functional.
+                            player.getScheduler().runDelayed(plugin,
+                                    ignored -> FloodgateIntegration.sendTeamForm(player), null, 2);
+                        }
+                    } else {
+                        player.sendMessage(Component.text(
+                                "The game is in the prep phase, please ask an op to add you to a " +
+                                        "team, then teleport you to the correct place."));
                     }
                 }
                 case BATTLE, POST_GAME -> player.sendMessage(

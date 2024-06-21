@@ -10,7 +10,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -349,6 +348,18 @@ public class WorldBorderController implements Listener {
             if (team != null) {
                 WorldBorder worldBorder = makeWorldBorder(getQuadrant(team), world);
                 player.setWorldBorder(worldBorder);
+                if (Bukkit.getPluginManager().isPluginEnabled("Apollo-Bukkit")) {
+                    player.getScheduler().runDelayed(plugin,
+                            scheduledTask -> LunarClientIntegration.setWorldBorders(player,
+                                    worldBorder.getSize(), getQuadrant(team), ignoredWorldKeys),
+                            null, 10);
+                }
+            } else if (Bukkit.getPluginManager().isPluginEnabled("Apollo-Bukkit") &&
+                    player.hasPermission(QuadWars.GAMEMASTER_PERMISSION)) {
+                player.getScheduler().runDelayed(plugin,
+                        scheduledTask -> LunarClientIntegration.setGameMasterWorldBorders(player,
+                                worldBorderSize / world.getCoordinateScale(), ignoredWorldKeys),
+                        null, 10);
             }
         }
     }
@@ -417,7 +428,7 @@ public class WorldBorderController implements Listener {
      * @param args   the arguments of the command
      * @return whether the command was processed
      */
-    boolean processCommand(@NotNull CommandSender sender, @NotNull String[] args) {
+    boolean processCommand(@NotNull Audience sender, @NotNull String[] args) {
         if (args.length == 0) {
             return false;
         }

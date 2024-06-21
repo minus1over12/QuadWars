@@ -35,6 +35,10 @@ repositories {
         name = "opencollab-snapshot"
         url = "https://repo.opencollab.dev/main/"
     }
+    maven {
+        name = 'lunarclient'
+        url = 'https://repo.lunarclient.dev'
+    }
 }
 
 dependencies {
@@ -42,7 +46,7 @@ dependencies {
     compileOnly 'org.jetbrains:annotations:24.1.0'
     implementation "org.bstats:bstats-bukkit:3.0.2"
     compileOnly 'org.geysermc.floodgate:api:2.2.2-SNAPSHOT'
-
+    compileOnly 'com.lunarclient:apollo-api:1.1.3'
 }
 
 def targetJavaVersion = 21
@@ -86,6 +90,7 @@ tasks {
             hangar("ViaVersion", "5.0.0")
             github("PaperMC", "Debuggery", "v1.5.1", "debuggery-bukkit-1.5.1.jar")
             modrinth("ctfbuddy", "1.0.1") // Might as well test my other stuff at the same time.
+            modrinth("lunar-client-apollo", "1.1.3")
         }
     }
     shadowJar {

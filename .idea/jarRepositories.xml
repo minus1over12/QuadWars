@@ -46,5 +46,10 @@
       <option name="name" value="opencollab-snapshot" />
       <option name="url" value="https://repo.opencollab.dev/main/" />
     </remote-repository>
+    <remote-repository>
+      <option name="id" value="lunarclient" />
+      <option name="name" value="lunarclient" />
+      <option name="url" value="https://repo.lunarclient.dev" />
+    </remote-repository>
   </component>
 </project>

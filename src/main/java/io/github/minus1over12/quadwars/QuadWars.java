@@ -18,7 +18,6 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +41,10 @@ public final class QuadWars extends JavaPlugin implements Listener {
      * The permission used for game masters.
      */
     static final String GAMEMASTER_PERMISSION = "quadwars.gamemaster";
+    /**
+     * The permission used for players to join a team.
+     */
+    static final String JOIN_TEAM_PERMISSION = "quadwars.player.jointeam";
     /**
      * The path to the hardcore configuration option.
      */
@@ -124,6 +127,10 @@ public final class QuadWars extends JavaPlugin implements Listener {
         pluginManager.registerEvents(playerControl, this);
         pluginManager.registerEvents(worldControl, this);
         pluginManager.registerEvents(this, this);
+        if (Bukkit.getPluginManager().isPluginEnabled("Apollo-Bukkit")) {
+            Listener lunarClientIntegration = new LunarClientIntegration();
+            pluginManager.registerEvents(lunarClientIntegration, this);
+        }
     }
     
     @Override
@@ -205,9 +212,9 @@ public final class QuadWars extends JavaPlugin implements Listener {
                         return true;
                     } else if (args.length == 1) {
                         BossBar progressBar = BossBar.bossBar(Component.text(switch (gameState) {
-                            case PREGAME -> "Start of Prep Phase";
-                            case PREP -> "Start of Battle Phase";
-                            case BATTLE -> "End of Battle Phase";
+                            case PREGAME -> "Prep Phase Starts";
+                            case PREP -> "Battle Phase Starts";
+                            case BATTLE -> "Battle Phase Ends";
                             case POST_GAME -> "End of Post-Game Phase";
                         }), 0, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
                         try {
@@ -329,17 +336,16 @@ public final class QuadWars extends JavaPlugin implements Listener {
                     sender.sendMessage(Component.text("Starting post-game phase…"));
                 }
             }
-            case POST_GAME -> {
-                Bukkit.getScheduler().runTask(this, () -> getServer().getPluginManager()
-                        .callEvent(new GameStateChangeEvent(GameState.PREGAME)));
-            }
+            case POST_GAME -> Bukkit.getScheduler().runTask(this,
+                    () -> getServer().getPluginManager()
+                            .callEvent(new GameStateChangeEvent(GameState.PREGAME)));
         }
     }
     
     @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender,
-                                                @NotNull Command command, @NotNull String alias,
-                                                @NotNull String[] args) {
+    public @NotNull List<String> onTabComplete(@NotNull CommandSender sender,
+                                               @NotNull Command command, @NotNull String alias,
+                                               @NotNull String[] args) {
         switch (command.getName().toLowerCase()) {
             case SET_STATE_COMMAND -> {
                 return args.length == 1 ?
@@ -371,15 +377,13 @@ public final class QuadWars extends JavaPlugin implements Listener {
                 }
             }
             case JOIN_TEAM_COMMAND -> {
-                if (args.length == 1) {
-                    return Bukkit.getScoreboardManager().getMainScoreboard().getTeams().stream()
-                            .map(team -> PlainTextComponentSerializer.plainText()
-                                    .serialize(team.displayName())).toList();
-                }
+                return args.length == 1 ?
+                        Bukkit.getScoreboardManager().getMainScoreboard().getTeams().stream()
+                                .map(team -> PlainTextComponentSerializer.plainText()
+                                        .serialize(team.displayName())).toList() : List.of();
             }
             default -> throw new UnsupportedOperationException(COMMAND_NOT_SUPPORTED);
         }
-        return super.onTabComplete(sender, command, alias, args);
     }
     
     /**
