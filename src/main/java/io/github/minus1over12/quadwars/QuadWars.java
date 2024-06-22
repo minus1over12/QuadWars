@@ -5,6 +5,7 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
@@ -113,6 +114,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         // Plugin startup logic
+        metrics();
         getLogger().config("Game state is " + gameState);
         LobbyWorldController lobbyWorldControl = new LobbyWorldController(this);
         teamControl = new TeamController(this);
@@ -396,5 +398,15 @@ public final class QuadWars extends JavaPlugin implements Listener {
         gameState = event.getState();
         gameStateConfig.set(GAME_STATE_PATH, gameState.toString());
         saveFileConfiguration(gameStateConfig, "Could not save game state file");
+    }
+    
+    /**
+     * Sends plugin metrics to bStats.
+     */
+    private void metrics() {
+        // All you have to do is adding the following two lines in your onEnable method.
+        // You can find the plugin ids of your plugins on the page https://bstats.org/what-is-my-plugin-id
+        int pluginId = 22364; // <-- Replace with the id of your plugin!
+        Metrics metrics = new Metrics(this, pluginId);
     }
 }
