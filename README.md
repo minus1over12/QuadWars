@@ -30,7 +30,7 @@ or another style of event that doesn't need hardcore, you can turn it off.
 
 ## Phases
 
-![](images/BattlePhaseStartTimer.png)
+![A boss bar showing the time until the battle phase starts](images/BattlePhaseStartTimer.png)
 
 The plugin has three main phases:
 
