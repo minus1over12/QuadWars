@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -26,7 +27,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -254,7 +257,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
             case JOIN_TEAM_COMMAND -> {
                 switch (gameState) {
                     case PREGAME, PREP -> {
-                        if (args.length != 1) {
+                        if (args.length == 0) {
                             return false;
                         }
                         if (sender instanceof Entity entity) {
@@ -264,15 +267,27 @@ public final class QuadWars extends JavaPlugin implements Listener {
                                 sender.sendMessage(Component.text("You are already on a team."));
                             } else {
                                 try {
+                                    Set<Team> teamsSet = scoreboard.getTeams();
+                                    Map<String, Team> teamNames =
+                                            HashMap.newHashMap(teamsSet.size());
+                                    for (Team team : teamsSet) {
+                                        teamNames.put(PlainTextComponentSerializer.plainText()
+                                                .serialize(team.displayName()), team);
+                                    }
                                     teamControl.addEntityToTeam(entity, Quadrant.valueOf(
-                                            scoreboard.getTeams().stream()
+                                            teamsSet.stream()
                                                     .map(team -> PlainTextComponentSerializer.plainText()
                                                             .serialize(team.displayName()))
                                                     .filter(displayName -> displayName.equalsIgnoreCase(
-                                                            args[0])).findAny().orElseThrow()));
+                                                            String.join(" ", args)))
+                                                    .map(name -> WorldBorderController.QUADWARS_PREFIX.matcher(
+                                                                    teamNames.get(name).getName())
+                                                            .replaceFirst("")).findAny()
+                                                    .orElseThrow()));
                                 } catch (IllegalArgumentException | NoSuchElementException e) {
                                     sender.sendMessage(Component.translatable("team.notFound",
-                                            Component.text(args[0])).color(NamedTextColor.RED));
+                                                    Component.text(String.join(" ", args)))
+                                            .color(NamedTextColor.RED));
                                 }
                             }
                         } else {

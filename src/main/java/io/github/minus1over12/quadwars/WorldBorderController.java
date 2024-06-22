@@ -70,7 +70,7 @@ public class WorldBorderController implements Listener {
     /**
      * The prefix for QuadWars teams.
      */
-    private static final Pattern QUADWARS_PREFIX = TeamController.QUADWARS_PREFIX;
+    static final Pattern QUADWARS_PREFIX = TeamController.QUADWARS_PREFIX;
     /**
      * The command string for the world border amount.
      */
