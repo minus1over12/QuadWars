@@ -135,7 +135,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
     
     @Override
     public void onDisable() {
-        saveConfig();
+        saveFileConfiguration(gameStateConfig, "Could not save game state file");
     }
     
     @Override
@@ -395,6 +395,6 @@ public final class QuadWars extends JavaPlugin implements Listener {
     public void onGameStateChange(GameStateChangeEvent event) {
         gameState = event.getState();
         gameStateConfig.set(GAME_STATE_PATH, gameState.toString());
-        saveConfig();
+        saveFileConfiguration(gameStateConfig, "Could not save game state file");
     }
 }

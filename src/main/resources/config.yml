@@ -12,10 +12,10 @@ worldBorderSize: 25000
 
 # These are the display names for each of the teams. You can format them using MiniMessage. If
 # you are not familiar with the MiniMessage format, there's an editor at https://webui.advntr.dev/
-nwDisplayName: "<blue>NW"
-neDisplayName: "<green>NE"
-seDisplayName: "<red>SE"
-swDisplayName: "<yellow>SW"
+nwDisplayName: "<blue>North West"
+neDisplayName: "<green>North East"
+seDisplayName: "<red>South East"
+swDisplayName: "<yellow>South West"
 # These are the prefixes for each team. Minecraft adds them to the start of the player's name.
 # They also support MiniMessage formatting.
 nwPrefix: "<blue>[NW] "
