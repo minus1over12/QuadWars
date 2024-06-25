@@ -20,6 +20,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPistonEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -689,6 +690,16 @@ public class WorldBorderController implements Listener {
      */
     @EventHandler
     public void onEntityExplodeEvent(EntityExplodeEvent event) {
+        cancelOOBEntityEventIfNeeded(event);
+    }
+    
+    /**
+     * Prevents entities from changing blocks outside their spawn quadrant in prep phase.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onEntityChangeBlockEvent(EntityChangeBlockEvent event) {
         cancelOOBEntityEventIfNeeded(event);
     }
 }
