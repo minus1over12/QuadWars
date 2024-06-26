@@ -97,6 +97,10 @@ public class WorldBorderController implements Listener {
      */
     static final String ADD_COMMAND = "add";
     /**
+     * The amount of damage the world border should do.
+     */
+    private static final double WORLD_BORDER_DAMAGE = 0.5;
+    /**
      * The size of the world border to use.
      */
     private final double worldBorderSize;
@@ -150,11 +154,13 @@ public class WorldBorderController implements Listener {
      * @return the quadrant of the location
      */
     private static Quadrant getQuadrantFromLocation(Location location) {
-        if (location.getX() < 0) {
-            return location.getZ() < 0 ? Quadrant.SW : Quadrant.SE;
+        Quadrant result;
+        if (location.getZ() > 0) {
+            result = location.getX() < 0 ? Quadrant.SW : Quadrant.SE;
         } else {
-            return location.getZ() < 0 ? Quadrant.NW : Quadrant.NE;
+            result = location.getX() < 0 ? Quadrant.NW : Quadrant.NE;
         }
+        return result;
     }
     
     /**
@@ -260,6 +266,41 @@ public class WorldBorderController implements Listener {
             // our offsets by -1 in some cases to get the right quadrant.
             Quadrant quadrant = getQuadrant(Objects.requireNonNull(
                     Bukkit.getScoreboardManager().getMainScoreboard().getPlayerTeam(player)));
+            double size = worldBorder.getSize();
+            // This is the "reverse engineered" algorithm for how Minecraft shifts the position of
+            // coordinates for world borders. You take the center, then subtract half the size of
+            // the border. You then subtract the distance from the origin to the border.
+            double xShift = worldBorder.getCenter().getX() - quadrant.xSign * size / 2 -
+                    (AXIS_BUFFER_OFFSET / coordinateScale * quadrant.xSign);
+            double zShift = worldBorder.getCenter().getZ() - quadrant.zSign * size / 2 -
+                    (AXIS_BUFFER_OFFSET / coordinateScale * quadrant.zSign);
+            // We then add our shifts to the player's location.
+            playerLocation = playerLocation.add(xShift, 0, zShift);
+        }
+        return playerLocation;
+        // And proceed to be sad about how long this took to figure out… ☹
+    }
+    
+    /**
+     * Shifts a player's location if they are in a world with coordinate scaling. For use with
+     * WorldBorder.isInside(Location).
+     *
+     * @param location    the location to shift
+     * @param worldBorder the world border to use for the shift
+     * @return the shifted location
+     */
+    private static Location getShiftedLocation(Location location, WorldBorder worldBorder) {
+        double coordinateScale = location.getWorld().getCoordinateScale();
+        // Gets a clone of the player's location. Not cloning this will cause the real player to
+        // move when we call Location.add().
+        Location playerLocation = location.clone();
+        // Make sure the player actually has their own world border.
+        Objects.requireNonNull(worldBorder);
+        // If the player is in a world with no coordinate scaling, we will just leave everything be.
+        if (coordinateScale != 1.0) {
+            // QuadWars' players are each in one Quadrant of the world. We will need to multiply
+            // our offsets by -1 in some cases to get the right quadrant.
+            Quadrant quadrant = getQuadrantFromLocation(worldBorder.getCenter());
             double size = worldBorder.getSize();
             // This is the "reverse engineered" algorithm for how Minecraft shifts the position of
             // coordinates for world borders. You take the center, then subtract half the size of
@@ -612,7 +653,7 @@ public class WorldBorderController implements Listener {
                 (worldBorderSize / 2) * quadrant.zSign + (AXIS_BUFFER_OFFSET * quadrant.zSign));
         //The size does need to be scaled though. Thanks Bukkit.
         worldBorder.setSize(worldBorderSize / scale);
-        worldBorder.setDamageAmount(0.5);
+        worldBorder.setDamageAmount(WORLD_BORDER_DAMAGE);
         return worldBorder;
     }
     
@@ -624,9 +665,10 @@ public class WorldBorderController implements Listener {
     private void onBlockPistonEventHelper(BlockPistonEvent event) {
         if (gameState == GameState.PREP) {
             Block piston = event.getBlock();
-            if (Arrays.stream(Quadrant.values()).noneMatch(
-                    quadrant -> makeWorldBorder(quadrant, piston.getWorld()).isInside(
-                            piston.getLocation()))) {
+            if (Arrays.stream(Quadrant.values())
+                    .map(quadrant -> makeWorldBorder(quadrant, piston.getWorld())).noneMatch(
+                            worldBorder -> worldBorder.isInside(
+                                    getShiftedLocation(piston.getLocation(), worldBorder)))) {
                 event.setCancelled(true);
             }
         }
@@ -673,11 +715,11 @@ public class WorldBorderController implements Listener {
             Entity projectile = event.getEntity();
             Location origin = projectile.getOrigin();
             if (origin != null) {
-                Quadrant spawnQuadrant = getQuadrantFromLocation(origin);
-                if (spawnQuadrant != null) {
-                    if (!getQuadrantFromLocation(projectile.getLocation()).equals(spawnQuadrant)) {
+                WorldBorder worldBorder =
+                        makeWorldBorder(getQuadrantFromLocation(origin), projectile.getWorld());
+                if (!worldBorder.isInside(
+                        getShiftedLocation(projectile.getLocation(), worldBorder))) {
                         event.setCancelled(true);
-                    }
                 }
             }
         }

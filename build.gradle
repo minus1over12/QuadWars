@@ -81,13 +81,13 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("1.20.6")
+        minecraftVersion("1.21")
         downloadPlugins {
             hangar("Geyser", "Geyser")
             hangar("Floodgate", "Floodgate")
             modrinth("FastAsyncWorldEdit", "2.10.0")
-            hangar("ViaBackwards", "5.0.0")
-            hangar("ViaVersion", "5.0.0")
+            hangar("ViaBackwards", "5.0.1")
+            hangar("ViaVersion", "5.0.1")
             github("PaperMC", "Debuggery", "v1.5.1", "debuggery-bukkit-1.5.1.jar")
             modrinth("ctfbuddy", "1.0.1") // Might as well test my other stuff at the same time.
             modrinth("lunar-client-apollo", "1.1.3")
