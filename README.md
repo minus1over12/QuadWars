@@ -69,9 +69,10 @@ commands. The player command provided by the plugin, `/jointeam`, is gated by
 
 ## Admin Commands
 
-### `/qwtransition`
+### `/qwtransition [<time>]`
 
-This moves the game to the next phase.
+This moves the game to the next phase. You can specify a number of seconds to wait before
+transitioning.
 
 ### `/qwsetphase <phase>`
 
