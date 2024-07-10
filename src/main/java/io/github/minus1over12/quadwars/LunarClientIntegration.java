@@ -13,6 +13,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
 import java.util.Arrays;
@@ -34,8 +35,8 @@ public class LunarClientIntegration implements Listener {
      * @param homeQuadrant     The quadrant the player's team is in.
      * @param ignoredWorldKeys The keys of the worlds to ignore.
      */
-    static void setWorldBorders(Entity player, double size, Quadrant homeQuadrant,
-                                Collection<NamespacedKey> ignoredWorldKeys) {
+    static void setWorldBorders(@NotNull Entity player, double size, Quadrant homeQuadrant,
+                                @NotNull Collection<NamespacedKey> ignoredWorldKeys) {
         World world = player.getWorld();
         if (!(world.getEnvironment().equals(World.Environment.THE_END) ||
                 ignoredWorldKeys.contains(world.getKey()))) {
@@ -59,8 +60,9 @@ public class LunarClientIntegration implements Listener {
      * @param borderModule The border module to use.
      * @param cancelEntry  whether to cancel entry into the border.
      */
-    private static void makeBorder(double size, Recipients apolloPlayer, Quadrant quadrant,
-                                   World world, BorderModule borderModule, boolean cancelEntry) {
+    private static void makeBorder(double size, Recipients apolloPlayer, @NotNull Quadrant quadrant,
+                                   @NotNull World world, @NotNull BorderModule borderModule,
+                                   boolean cancelEntry) {
         double minCorner = WorldBorderController.AXIS_BUFFER_OFFSET / world.getCoordinateScale();
         double maxCorner = size + minCorner;
         // https://minecraft.wiki/w/Miscellaneous_colors#World_border
@@ -80,8 +82,8 @@ public class LunarClientIntegration implements Listener {
      * @param size             The size of the world.
      * @param ignoredWorldKeys The keys of the worlds to ignore.
      */
-    static void setGameMasterWorldBorders(Entity player, double size,
-                                          Collection<NamespacedKey> ignoredWorldKeys) {
+    static void setGameMasterWorldBorders(@NotNull Entity player, double size,
+                                          @NotNull Collection<NamespacedKey> ignoredWorldKeys) {
         World world = player.getWorld();
         if (!(world.getEnvironment().equals(World.Environment.THE_END) ||
                 ignoredWorldKeys.contains(world.getKey()))) {
@@ -100,7 +102,7 @@ public class LunarClientIntegration implements Listener {
      * @param event The event that triggered this method.
      */
     @EventHandler
-    public static void onGameStateChange(GameStateChangeEvent event) {
+    public static void onGameStateChange(@NotNull GameStateChangeEvent event) {
         GameState state = event.getState();
         Options options = Apollo.getModuleManager().getModule(ServerRuleModule.class).getOptions();
         options.set(ServerRuleModule.COMPETITIVE_GAME, state.equals(GameState.BATTLE));

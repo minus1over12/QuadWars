@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.scoreboard.Scoreboard;
 import org.geysermc.cumulus.form.SimpleForm;
 import org.geysermc.floodgate.api.FloodgateApi;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -23,7 +24,7 @@ public enum FloodgateIntegration {
      *
      * @param player the player to send the form to
      */
-    static void sendTeamForm(Entity player) {
+    static void sendTeamForm(@NotNull Entity player) {
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         if (scoreboard.getEntityTeam(player) == null &&
                 player.hasPermission("quadwars.player.jointeam")) {

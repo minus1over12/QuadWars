@@ -18,6 +18,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 import java.util.Set;
@@ -47,11 +48,11 @@ public class TeamController implements Listener {
     /**
      * The logger for the plugin.
      */
-    private final Logger logger;
+    private final @NotNull Logger logger;
     /**
      * The default world set in the config.
      */
-    private final World defaultWorld;
+    private final @NotNull World defaultWorld;
     /**
      * The current game state.
      */
@@ -66,7 +67,7 @@ public class TeamController implements Listener {
      *
      * @param plugin the plugin creating the object
      */
-    TeamController(QuadWars plugin) {
+    TeamController(@NotNull QuadWars plugin) {
         gameState = plugin.getGameState();
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         logger = plugin.getLogger();
@@ -106,7 +107,7 @@ public class TeamController implements Listener {
      * @param event The event that triggered this method.
      */
     @EventHandler
-    public void onGameStateChange(GameStateChangeEvent event) {
+    public void onGameStateChange(@NotNull GameStateChangeEvent event) {
         gameState = event.getState();
         switch (gameState) {
             case PREGAME, BATTLE, POST_GAME -> {
@@ -137,7 +138,7 @@ public class TeamController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) {
+    public void onPlayerDeath(@NotNull PlayerDeathEvent event) {
         checkWinCondition(event.getEntity());
     }
     
@@ -147,7 +148,7 @@ public class TeamController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
+    public void onPlayerQuit(@NotNull PlayerQuitEvent event) {
         checkWinCondition(event.getPlayer());
     }
     
@@ -156,7 +157,7 @@ public class TeamController implements Listener {
      *
      * @param outPlayer the player that was eliminated
      */
-    private void checkWinCondition(OfflinePlayer outPlayer) {
+    private void checkWinCondition(@NotNull OfflinePlayer outPlayer) {
         if (hardcore && gameState == GameState.BATTLE) {
             Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
             Set<Team> aliveTeams = Bukkit.getOnlinePlayers().stream()
@@ -191,7 +192,7 @@ public class TeamController implements Listener {
      * @param entity   the entity to add
      * @param quadrant the team to add the entity to
      */
-    void addEntityToTeam(Entity entity, Quadrant quadrant) {
+    void addEntityToTeam(@NotNull Entity entity, @NotNull Quadrant quadrant) {
         Team team = Objects.requireNonNull(
                 Bukkit.getScoreboardManager().getMainScoreboard().getTeam(TEAM_PREFIX + quadrant),
                 "Could not load a team");

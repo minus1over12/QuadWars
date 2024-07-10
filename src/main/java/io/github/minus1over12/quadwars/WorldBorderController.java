@@ -115,7 +115,7 @@ public class WorldBorderController implements Listener {
     /**
      * The plugin associated with this controller.
      */
-    private final Plugin plugin;
+    private final @NotNull Plugin plugin;
     /**
      * Set of players known to be out of bounds.
      */
@@ -131,7 +131,7 @@ public class WorldBorderController implements Listener {
      * @param plugin the plugin to get the game state from and use for scheduling events.
      * @param ignoredWorldKeys the keys of worlds to ignore.
      */
-    WorldBorderController(QuadWars plugin, Collection<NamespacedKey> ignoredWorldKeys) {
+    WorldBorderController(@NotNull QuadWars plugin, Collection<NamespacedKey> ignoredWorldKeys) {
         this.plugin = plugin;
         this.ignoredWorldKeys = ignoredWorldKeys;
         gameState = plugin.getGameState();
@@ -153,7 +153,7 @@ public class WorldBorderController implements Listener {
      * @param location the location to get the quadrant of
      * @return the quadrant of the location
      */
-    private static Quadrant getQuadrantFromLocation(Location location) {
+    private static @NotNull Quadrant getQuadrantFromLocation(@NotNull Location location) {
         Quadrant result;
         if (location.getZ() > 0) {
             result = location.getX() < 0 ? Quadrant.SW : Quadrant.SE;
@@ -164,42 +164,12 @@ public class WorldBorderController implements Listener {
     }
     
     /**
-     * Sets the world border for joining players.
-     *
-     * @param event the event that triggered this method
-     */
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        //I'm not sure why the WorldBorder has to be set in the next tick instead of the current
-        // one, but it does.
-        player.getScheduler().run(plugin, ignored -> setPlayerWorldBorder(player), null);
-    }
-    
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void setGameStateEarly(GameStateChangeEvent event) {
-        gameState = event.getState();
-    }
-    
-    /**
-     * Sets the world borders when the game state changes.
-     *
-     * @param event the event that triggered this method
-     */
-    @EventHandler
-    public void onGameStateChange(GameStateChangeEvent event) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            setPlayerWorldBorder(player);
-        }
-    }
-    
-    /**
      * Sets the world border for players when they respawn.
      *
      * @param event the event that triggered this method
      */
     @EventHandler
-    public static void onPlayerRespawn(PlayerRespawnEvent event) {
+    public static void onPlayerRespawn(@NotNull PlayerRespawnEvent event) {
         if (!(event.isAnchorSpawn() || event.isBedSpawn())) {
             Team team = Bukkit.getScoreboardManager().getMainScoreboard()
                     .getPlayerTeam(event.getPlayer());
@@ -214,45 +184,13 @@ public class WorldBorderController implements Listener {
     }
     
     /**
-     * Sets a new world border for players when they switch worlds.
-     *
-     * @param event the event that triggered this method
-     */
-    @EventHandler
-    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
-        setPlayerWorldBorder(event.getPlayer());
-    }
-    
-    /**
-     * Schedules damage for players moving outside the world border in the prep phase, because the
-     * virtual one they get won't do it for us.
-     *
-     * @param event the event that triggered this method
-     */
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        if (gameState == GameState.PREP) {
-            Player player = event.getPlayer();
-            WorldBorder worldBorder = player.getWorldBorder();
-            if (worldBorder != null) {
-                if (!worldBorder.isInside(getShiftedLocation(player)) &&
-                        !oobPlayers.contains(player)) {
-                    player.getScheduler().runAtFixedRate(plugin,
-                            scheduledTask -> worldBorderDamageTask(scheduledTask, player),
-                            () -> oobPlayers.remove(player), 1, 1);
-                }
-            }
-        }
-    }
-    
-    /**
      * Shifts a player's location if they are in a world with coordinate scaling. For use with
      * WorldBorder.isInside(Location).
      *
      * @param player the player to shift the location of
      * @return the shifted location
      */
-    private static Location getShiftedLocation(Player player) {
+    private static @NotNull Location getShiftedLocation(@NotNull Player player) {
         double coordinateScale = player.getWorld().getCoordinateScale();
         // Gets a clone of the player's location. Not cloning this will cause the real player to
         // move when we call Location.add().
@@ -282,6 +220,18 @@ public class WorldBorderController implements Listener {
     }
     
     /**
+     * Sets the world borders when the game state changes.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onGameStateChange(GameStateChangeEvent event) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            setPlayerWorldBorder(player);
+        }
+    }
+    
+    /**
      * Shifts a player's location if they are in a world with coordinate scaling. For use with
      * WorldBorder.isInside(Location).
      *
@@ -289,7 +239,8 @@ public class WorldBorderController implements Listener {
      * @param worldBorder the world border to use for the shift
      * @return the shifted location
      */
-    private static Location getShiftedLocation(Location location, WorldBorder worldBorder) {
+    private static @NotNull Location getShiftedLocation(@NotNull Location location,
+                                                        @NotNull WorldBorder worldBorder) {
         double coordinateScale = location.getWorld().getCoordinateScale();
         // Gets a clone of the player's location. Not cloning this will cause the real player to
         // move when we call Location.add().
@@ -322,8 +273,101 @@ public class WorldBorderController implements Listener {
      * @param team the team to get the quadrant of
      * @return the quadrant of the team
      */
-    private static @NotNull Quadrant getQuadrant(Team team) {
+    private static @NotNull Quadrant getQuadrant(@NotNull Team team) {
         return Quadrant.valueOf(QUADWARS_PREFIX.matcher(team.getName()).replaceFirst(""));
+    }
+    
+    /**
+     * Sends a message to the sender about the world border being set.
+     *
+     * @param sender      the sender to send the message to
+     * @param worldBorder the world border to send the message about
+     */
+    private static void sendWorldBorderSetMessage(@NotNull Audience sender,
+                                                  @NotNull WorldBorder worldBorder) {
+        sender.sendMessage(Component.textOfChildren(
+                Component.text(Objects.requireNonNull(worldBorder.getWorld()).getName() + ": "),
+                Component.translatable("commands.worldborder.set.immediate",
+                        Component.text(worldBorder.getSize()))));
+    }
+    
+    /**
+     * Sets the size of a world border over time.
+     *
+     * @param sender       the sender to send the message to
+     * @param arg2         the time to take to set the border
+     * @param worldBorder  the world border to set the size of
+     * @param originalSize the original size of the world border
+     * @param newSize      the new size of the world border
+     */
+    private static void setSizeOverTime(@NotNull Audience sender, long arg2,
+                                        @NotNull WorldBorder worldBorder, double originalSize,
+                                        double newSize) {
+        worldBorder.setSize(newSize, arg2);
+        Component message;
+        if (newSize > originalSize) {
+            message =
+                    Component.translatable("commands.worldborder.set.grow", Component.text(newSize),
+                            Component.text(arg2));
+        } else if (newSize < originalSize) {
+            message = Component.translatable("commands.worldborder.set.shrink",
+                    Component.text(newSize), Component.text(arg2));
+        } else {
+            message = Component.translatable("commands.worldborder.set.failed.nochange");
+        }
+        sender.sendMessage(Component.textOfChildren(
+                Component.text(Objects.requireNonNull(worldBorder.getWorld()).getName() + ": "),
+                message));
+    }
+    
+    /**
+     * Sets the world border for joining players.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onPlayerJoin(@NotNull PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        //I'm not sure why the WorldBorder has to be set in the next tick instead of the current
+        // one, but it does.
+        player.getScheduler().run(plugin, ignored -> setPlayerWorldBorder(player), null);
+    }
+    
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void setGameStateEarly(@NotNull GameStateChangeEvent event) {
+        gameState = event.getState();
+    }
+    
+    /**
+     * Sets a new world border for players when they switch worlds.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onPlayerChangedWorld(@NotNull PlayerChangedWorldEvent event) {
+        setPlayerWorldBorder(event.getPlayer());
+    }
+    
+    /**
+     * Schedules damage for players moving outside the world border in the prep phase, because the
+     * virtual one they get won't do it for us.
+     *
+     * @param event the event that triggered this method
+     */
+    @EventHandler
+    public void onPlayerMove(@NotNull PlayerMoveEvent event) {
+        if (gameState == GameState.PREP) {
+            Player player = event.getPlayer();
+            WorldBorder worldBorder = player.getWorldBorder();
+            if (worldBorder != null) {
+                if (!worldBorder.isInside(getShiftedLocation(player)) &&
+                        !oobPlayers.contains(player)) {
+                    player.getScheduler().runAtFixedRate(plugin,
+                            scheduledTask -> worldBorderDamageTask(scheduledTask, player),
+                            () -> oobPlayers.remove(player), 1, 1);
+                }
+            }
+        }
     }
     
     /**
@@ -334,7 +378,8 @@ public class WorldBorderController implements Listener {
      * @param scheduledTask the task that is running this method
      * @param player        the player to damage
      */
-    private void worldBorderDamageTask(ScheduledTask scheduledTask, Player player) {
+    private void worldBorderDamageTask(@NotNull ScheduledTask scheduledTask,
+                                       @NotNull Player player) {
         WorldBorder worldBorder = player.getWorldBorder();
         if (worldBorder != null) {
             Location shiftedLocation = getShiftedLocation(player);
@@ -370,7 +415,7 @@ public class WorldBorderController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerPostRespawn(PlayerPostRespawnEvent event) {
+    public void onPlayerPostRespawn(@NotNull PlayerPostRespawnEvent event) {
         setPlayerWorldBorder(event.getPlayer());
     }
     
@@ -379,7 +424,7 @@ public class WorldBorderController implements Listener {
      *
      * @param player the player to set the world border for
      */
-    private void setPlayerWorldBorder(Player player) {
+    private void setPlayerWorldBorder(@NotNull Player player) {
         World world = player.getWorld();
         if (gameState != GameState.PREP ||
                 world.getEnvironment().equals(World.Environment.THE_END) ||
@@ -413,54 +458,11 @@ public class WorldBorderController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerPortal(PlayerPortalEvent event) {
+    public void onPlayerPortal(@NotNull PlayerPortalEvent event) {
         if (!allowEndInPrepPhase &&
                 event.getTo().getWorld().getEnvironment().equals(World.Environment.THE_END)) {
             event.setCancelled(true);
         }
-    }
-    
-    /**
-     * Sends a message to the sender about the world border being set.
-     *
-     * @param sender      the sender to send the message to
-     * @param worldBorder the world border to send the message about
-     */
-    private static void sendWorldBorderSetMessage(@NotNull Audience sender,
-                                                  WorldBorder worldBorder) {
-        sender.sendMessage(Component.textOfChildren(
-                Component.text(Objects.requireNonNull(worldBorder.getWorld()).getName() + ": "),
-                Component.translatable("commands.worldborder.set.immediate",
-                        Component.text(worldBorder.getSize()))));
-    }
-    
-    /**
-     * Sets the size of a world border over time.
-     *
-     * @param sender       the sender to send the message to
-     * @param arg2         the time to take to set the border
-     * @param worldBorder  the world border to set the size of
-     * @param originalSize the original size of the world border
-     * @param newSize      the new size of the world border
-     */
-    private static void setSizeOverTime(@NotNull Audience sender, long arg2,
-                                        WorldBorder worldBorder, double originalSize,
-                                        double newSize) {
-        worldBorder.setSize(newSize, arg2);
-        Component message;
-        if (newSize > originalSize) {
-            message =
-                    Component.translatable("commands.worldborder.set.grow", Component.text(newSize),
-                            Component.text(arg2));
-        } else if (newSize < originalSize) {
-            message = Component.translatable("commands.worldborder.set.shrink",
-                    Component.text(newSize), Component.text(arg2));
-        } else {
-            message = Component.translatable("commands.worldborder.set.failed.nochange");
-        }
-        sender.sendMessage(Component.textOfChildren(
-                Component.text(Objects.requireNonNull(worldBorder.getWorld()).getName() + ": "),
-                message));
     }
     
     /**
@@ -470,7 +472,7 @@ public class WorldBorderController implements Listener {
      * @param args   the arguments of the command
      * @return whether the command was processed
      */
-    boolean processCommand(@NotNull Audience sender, @NotNull String[] args) {
+    boolean processCommand(@NotNull Audience sender, @NotNull String @NotNull [] args) {
         if (args.length == 0) {
             return false;
         }
@@ -642,7 +644,7 @@ public class WorldBorderController implements Listener {
      * @param world    the world to make the world border in
      * @return the new world border
      */
-    private @NotNull WorldBorder makeWorldBorder(Quadrant quadrant, World world) {
+    private @NotNull WorldBorder makeWorldBorder(@NotNull Quadrant quadrant, @NotNull World world) {
         WorldBorder worldBorder = Bukkit.createWorldBorder();
         double scale = world.getCoordinateScale();
         //DO NOT SCALE THE CENTER!!
@@ -662,7 +664,7 @@ public class WorldBorderController implements Listener {
      *
      * @param event the event that triggered this method
      */
-    private void onBlockPistonEventHelper(BlockPistonEvent event) {
+    private void onBlockPistonEventHelper(@NotNull BlockPistonEvent event) {
         if (gameState == GameState.PREP) {
             Block piston = event.getBlock();
             if (Arrays.stream(Quadrant.values())
@@ -680,7 +682,7 @@ public class WorldBorderController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onBlockPistonEvent(BlockPistonExtendEvent event) {
+    public void onBlockPistonEvent(@NotNull BlockPistonExtendEvent event) {
         onBlockPistonEventHelper(event);
     }
     
@@ -690,7 +692,7 @@ public class WorldBorderController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onBlockPistonEvent(BlockPistonRetractEvent event) {
+    public void onBlockPistonEvent(@NotNull BlockPistonRetractEvent event) {
         onBlockPistonEventHelper(event);
     }
     
@@ -700,7 +702,7 @@ public class WorldBorderController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onProjectileHitEvent(ProjectileHitEvent event) {
+    public void onProjectileHitEvent(@NotNull ProjectileHitEvent event) {
         cancelOOBEntityEventIfNeeded(event);
     }
     
@@ -710,7 +712,8 @@ public class WorldBorderController implements Listener {
      * @param event the event that triggered this method
      * @param <T>   the type of event
      */
-    private <T extends EntityEvent & Cancellable> void cancelOOBEntityEventIfNeeded(T event) {
+    private <T extends EntityEvent & Cancellable> void cancelOOBEntityEventIfNeeded(
+            @NotNull T event) {
         if (gameState == GameState.PREP) {
             Entity projectile = event.getEntity();
             Location origin = projectile.getOrigin();
@@ -731,7 +734,7 @@ public class WorldBorderController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onEntityExplodeEvent(EntityExplodeEvent event) {
+    public void onEntityExplodeEvent(@NotNull EntityExplodeEvent event) {
         cancelOOBEntityEventIfNeeded(event);
     }
     
@@ -741,7 +744,7 @@ public class WorldBorderController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onEntityChangeBlockEvent(EntityChangeBlockEvent event) {
+    public void onEntityChangeBlockEvent(@NotNull EntityChangeBlockEvent event) {
         cancelOOBEntityEventIfNeeded(event);
     }
 }

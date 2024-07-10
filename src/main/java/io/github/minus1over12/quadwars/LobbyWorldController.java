@@ -16,6 +16,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -40,7 +41,7 @@ public class LobbyWorldController implements Listener {
     /**
      * The lobby world.
      */
-    private final World lobbyWorld;
+    private final @NotNull World lobbyWorld;
     /**
      * The current game state.
      */
@@ -49,14 +50,14 @@ public class LobbyWorldController implements Listener {
     /**
      * The plugin used for scheduling tasks.
      */
-    private final Plugin plugin;
+    private final @NotNull Plugin plugin;
     
     /**
      * Creates a lobby world control object.
      *
      * @param plugin the plugin to get the game state from
      */
-    LobbyWorldController(QuadWars plugin) {
+    LobbyWorldController(@NotNull QuadWars plugin) {
         gameState = plugin.getGameState();
         lobbyWorld = Objects.requireNonNull(
                 new WorldCreator(new NamespacedKey(plugin, "lobby")).generateStructures(false)
@@ -82,7 +83,7 @@ public class LobbyWorldController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    public void onPlayerJoin(@NotNull PlayerJoinEvent event) {
         Player player = event.getPlayer();
         if (gameState == GameState.PREGAME ||
                 (!player.hasPermission(QuadWars.GAMEMASTER_PERMISSION) &&
@@ -138,7 +139,7 @@ public class LobbyWorldController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onGameStateChange(GameStateChangeEvent event) {
+    public void onGameStateChange(@NotNull GameStateChangeEvent event) {
         gameState = event.getState();
         if (gameState == GameState.PREGAME) {
             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -156,6 +157,7 @@ public class LobbyWorldController implements Listener {
      *
      * @return the NamespacedKey of the lobby world
      */
+    @NotNull
     NamespacedKey getLobbyWorldKey() {
         return lobbyWorld.getKey();
     }

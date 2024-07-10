@@ -32,7 +32,7 @@ public class GameStateChangeEvent extends Event {
      * Static method required by the API.
      * @return The handler list for this event.
      */
-    public static HandlerList getHandlerList() {
+    public static @NotNull HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
     

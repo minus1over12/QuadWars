@@ -15,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Controls the players in the game.
@@ -45,7 +46,7 @@ public class PlayerController implements Listener {
      *
      * @param plugin the plugin creating this controller.
      */
-    public PlayerController(QuadWars plugin) {
+    public PlayerController(@NotNull QuadWars plugin) {
         killOnQuit = plugin.getConfig().getBoolean("killOnQuit");
         hardcore = plugin.getConfig().getBoolean(QuadWars.HARDCORE_CONFIG_PATH);
         state = plugin.getGameState();
@@ -57,7 +58,7 @@ public class PlayerController implements Listener {
      * @param event The event that triggered this method.
      */
     @EventHandler
-    public static void onGameStateChange(GameStateChangeEvent event) {
+    public static void onGameStateChange(@NotNull GameStateChangeEvent event) {
         state = event.getState();
         switch (state) {
             case PREGAME, PREP -> {
@@ -98,7 +99,7 @@ public class PlayerController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerPostRespawn(PlayerPostRespawnEvent event) {
+    public void onPlayerPostRespawn(@NotNull PlayerPostRespawnEvent event) {
         setSpectatorIfNeeded(event.getPlayer());
     }
     
@@ -107,7 +108,7 @@ public class PlayerController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerDeath(PlayerDeathEvent event) {
+    public void onPlayerDeath(@NotNull PlayerDeathEvent event) {
         setSpectatorIfNeeded(event.getPlayer());
     }
     
@@ -116,7 +117,7 @@ public class PlayerController implements Listener {
      *
      * @param player the player to set the game mode for
      */
-    private void setSpectatorIfNeeded(HumanEntity player) {
+    private void setSpectatorIfNeeded(@NotNull HumanEntity player) {
         if (hardcore && (state == GameState.BATTLE || state == GameState.POST_GAME)) {
             player.setGameMode(GameMode.SPECTATOR);
         }
@@ -128,7 +129,7 @@ public class PlayerController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
+    public void onPlayerQuit(@NotNull PlayerQuitEvent event) {
         killIfNeeded(event.getPlayer());
     }
     
@@ -137,7 +138,7 @@ public class PlayerController implements Listener {
      *
      * @param player the player to check
      */
-    private void killIfNeeded(Damageable player) {
+    private void killIfNeeded(@NotNull Damageable player) {
         if (hardcore && killOnQuit && state == GameState.BATTLE &&
                 !player.hasPermission(QuadWars.GAMEMASTER_PERMISSION)) {
             player.setHealth(0);
@@ -150,7 +151,7 @@ public class PlayerController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    public void onPlayerJoin(@NotNull PlayerJoinEvent event) {
         killIfNeeded(event.getPlayer());
     }
     

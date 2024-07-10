@@ -6,6 +6,7 @@ import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
@@ -30,7 +31,7 @@ public class WorldController implements Listener {
      * @param ignoredWorldKeys the keys to ignore
      * @param plugin the plugin creating the object
      */
-    WorldController(Collection<NamespacedKey> ignoredWorldKeys, Plugin plugin) {
+    WorldController(Collection<NamespacedKey> ignoredWorldKeys, @NotNull Plugin plugin) {
         this.ignoredWorldKeys = ignoredWorldKeys;
         hardcore = plugin.getConfig().getBoolean(QuadWars.HARDCORE_CONFIG_PATH);
     }
@@ -41,7 +42,7 @@ public class WorldController implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onGameStateChange(GameStateChangeEvent event) {
+    public void onGameStateChange(@NotNull GameStateChangeEvent event) {
         GameState state = event.getState();
         for (World world : Bukkit.getWorlds().stream()
                 .filter(world -> !ignoredWorldKeys.contains(world.getKey())).toList()) {

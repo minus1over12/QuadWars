@@ -173,7 +173,8 @@ public final class QuadWars extends JavaPlugin implements Listener {
      * @param gameStateConfig the configuration to save
      * @param errorMessage    the message to log if the save fails
      */
-    private void saveFileConfiguration(FileConfiguration gameStateConfig, String errorMessage) {
+    private void saveFileConfiguration(@NotNull FileConfiguration gameStateConfig,
+                                       String errorMessage) {
         try {
             gameStateConfig.save(gameStateFile);
         } catch (IOException e) {
@@ -192,7 +193,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
     
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
-                             @NotNull String label, @NotNull String[] args) {
+                             @NotNull String label, @NotNull String @NotNull [] args) {
         switch (command.getName().toLowerCase()) {
             case SET_STATE_COMMAND -> {
                 if (args.length != 1) {
@@ -362,7 +363,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
     @Override
     public @NotNull List<String> onTabComplete(@NotNull CommandSender sender,
                                                @NotNull Command command, @NotNull String alias,
-                                               @NotNull String[] args) {
+                                               @NotNull String @NotNull [] args) {
         switch (command.getName().toLowerCase()) {
             case SET_STATE_COMMAND -> {
                 return args.length == 1 ?
@@ -409,7 +410,7 @@ public final class QuadWars extends JavaPlugin implements Listener {
      * @param event the event that triggered this method
      */
     @EventHandler
-    public void onGameStateChange(GameStateChangeEvent event) {
+    public void onGameStateChange(@NotNull GameStateChangeEvent event) {
         gameState = event.getState();
         gameStateConfig.set(GAME_STATE_PATH, gameState.toString());
         saveFileConfiguration(gameStateConfig, "Could not save game state file");
